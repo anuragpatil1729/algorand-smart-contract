@@ -27,34 +27,6 @@ public class AgentDto {
         this.supportedCapabilities = supportedCapabilities;
     }
 
-    public static Builder builder() { return new Builder(); }
-
-    public static class Builder {
-        private String id;
-        private String name;
-        private String endpoint;
-        private String walletAddress;
-        private Double rating;
-        private Double successRate;
-        private String healthStatus;
-        private Double basePrice;
-        private List<String> supportedCapabilities;
-
-        public Builder id(String id) { this.id = id; return this; }
-        public Builder name(String name) { this.name = name; return this; }
-        public Builder endpoint(String endpoint) { this.endpoint = endpoint; return this; }
-        public Builder walletAddress(String walletAddress) { this.walletAddress = walletAddress; return this; }
-        public Builder rating(Double rating) { this.rating = rating; return this; }
-        public Builder successRate(Double successRate) { this.successRate = successRate; return this; }
-        public Builder healthStatus(String healthStatus) { this.healthStatus = healthStatus; return this; }
-        public Builder basePrice(Double basePrice) { this.basePrice = basePrice; return this; }
-        public Builder supportedCapabilities(List<String> supportedCapabilities) { this.supportedCapabilities = supportedCapabilities; return this; }
-
-        public AgentDto build() {
-            return new AgentDto(id, name, endpoint, walletAddress, rating, successRate, healthStatus, basePrice, supportedCapabilities);
-        }
-    }
-
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
     public String getName() { return name; }

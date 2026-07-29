@@ -21,16 +21,20 @@ spring:
     properties:
       hibernate:
         format_sql: true
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
 
-agentmesh:
-  algorand:
-    node-url: http://localhost:4001
-    network: testnet
-    escrow-address: AGENTMESH_ESCROW_CONTRACT_7X9V
-    simulation-mode: true
-  scoring:
-    reputation-weight: 0.35
-    success-rate-weight: 0.25
-    confidence-weight: 0.20
-    price-weight: 0.10
-    eta-weight: 0.10
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env

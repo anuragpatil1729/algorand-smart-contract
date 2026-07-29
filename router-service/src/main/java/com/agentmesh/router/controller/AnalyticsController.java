@@ -1,9 +1,10 @@
 package com.agentmesh.router.controller;
 
-import com.agentmesh.router.dto.AnalyticsSummaryDto;
+import com.agentmesh.router.dto.AnalyticsDto;
 import com.agentmesh.router.service.AgentMeshService;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/analytics")
@@ -16,8 +17,7 @@ public class AnalyticsController {
     }
 
     @GetMapping
-    public ResponseEntity<AnalyticsSummaryDto> getAnalytics() {
-        AnalyticsSummaryDto summary = agentMeshService.getAnalyticsSummary();
-        return ResponseEntity.ok(summary);
+    public AnalyticsDto getAnalytics() {
+        return agentMeshService.getAnalytics();
     }
 }

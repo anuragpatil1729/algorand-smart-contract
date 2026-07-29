@@ -1,6 +1,7 @@
 package com.agentmesh.router.repository;
 
 import com.agentmesh.router.model.Workflow;
+import com.agentmesh.router.model.enums.WorkflowStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -8,5 +9,5 @@ import java.util.List;
 
 @Repository
 public interface WorkflowRepository extends JpaRepository<Workflow, String> {
-    List<Workflow> findByStatus(String status);
+    List<Workflow> findByStatus(WorkflowStatus status);
 }

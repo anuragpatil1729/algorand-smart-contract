@@ -5,6 +5,7 @@ import com.agentmesh.router.model.Payment;
 import com.agentmesh.router.model.Task;
 import com.agentmesh.router.model.Transaction;
 import com.agentmesh.router.model.Workflow;
+import com.agentmesh.router.model.enums.PaymentStatus;
 import com.agentmesh.router.repository.AgentRepository;
 import com.agentmesh.router.repository.PaymentRepository;
 import com.agentmesh.router.repository.TransactionRepository;
@@ -43,10 +44,10 @@ public class AlgorandPaymentService {
         String paymentId = "pay-" + UUID.randomUUID().toString().substring(0, 8);
         Payment payment = Payment.builder()
                 .id(paymentId)
-                .workflowId(workflow.getId())
-                .escrowWallet(ESCROW_WALLET)
+                .workflow(workflow)
+                .escrowAddress(ESCROW_WALLET)
                 .totalAmount(workflow.getTotalPrice())
-                .status("HELD_IN_ESCROW")
+                .paymentStatus(PaymentStatus.HELD_IN_ESCROW)
                 .txGroupId("ALG-GROUP-INIT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -81,7 +82,7 @@ public class AlgorandPaymentService {
 
         String groupId = "ALG-GROUP-ATOMIC-" + UUID.randomUUID().toString().substring(0, 10).toUpperCase();
         payment.setTxGroupId(groupId);
-        payment.setStatus("DISBURSED");
+        payment.setPaymentStatus(PaymentStatus.DISBURSED);
         payment.setCompletedAt(LocalDateTime.now());
         paymentRepository.save(payment);
 
@@ -102,9 +103,9 @@ public class AlgorandPaymentService {
         transactionRepository.save(feeTx);
 
         for (Task task : completedTasks) {
-            if ("COMPLETED".equals(task.getStatus()) && task.getAssignedAgent() != null) {
-                Agent agent = agentRepository.findById(task.getAssignedAgent()).orElse(null);
-                String agentWallet = (agent != null) ? agent.getWalletAddress() : "D64EJWVXUFY3SRUNHXL6XZHPMHXVQFBOFX723TVNAINBGG6MJLWWZOHKPQ";
+            if ("COMPLETED".equalsIgnoreCase(task.getStatus()) && task.getAssignedAgent() != null) {
+                Agent agent = task.getAssignedAgent();
+                String agentWallet = (agent != null && agent.getWalletAddress() != null) ? agent.getWalletAddress() : "D64EJWVXUFY3SRUNHXL6XZHPMHXVQFBOFX723TVNAINBGG6MJLWWZOHKPQ";
 
                 Transaction payoutTx = Transaction.builder()
                         .id("tx-" + UUID.randomUUID().toString().substring(0, 8))
@@ -113,7 +114,7 @@ public class AlgorandPaymentService {
                         .senderWallet(ESCROW_WALLET)
                         .receiverWallet(agentWallet)
                         .amount(roundAmount(task.getPrice()))
-                        .agentId(task.getAssignedAgent())
+                        .agentId(agent != null ? agent.getId() : "N/A")
                         .status("SUCCESS")
                         .blockRound(blockRound)
                         .timestamp(LocalDateTime.now())
@@ -133,7 +134,7 @@ public class AlgorandPaymentService {
     public Payment refundUser(Workflow workflow) {
         Payment payment = paymentRepository.findByWorkflowId(workflow.getId()).orElse(null);
         if (payment != null) {
-            payment.setStatus("REFUNDED");
+            payment.setPaymentStatus(PaymentStatus.REFUNDED);
             payment.setCompletedAt(LocalDateTime.now());
             paymentRepository.save(payment);
 

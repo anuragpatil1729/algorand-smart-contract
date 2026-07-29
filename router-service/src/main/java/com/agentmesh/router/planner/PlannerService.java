@@ -1,59 +1,146 @@
 package com.agentmesh.router.planner;
 
+import com.agentmesh.router.discovery.AgentDiscoveryService;
 import com.agentmesh.router.model.Task;
+import com.agentmesh.router.model.Workflow;
+import com.agentmesh.router.model.enums.TaskStatus;
+import com.agentmesh.router.model.enums.TaskType;
+import com.agentmesh.router.repository.TaskRepository;
+import com.agentmesh.router.repository.WorkflowRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class PlannerService {
 
-    public List<Task> decomposePrompt(String workflowId, String prompt) {
-        String lower = prompt.toLowerCase();
-        List<Task> tasks = new ArrayList<>();
+    private static final Logger log = LoggerFactory.getLogger(PlannerService.class);
 
-        if (lower.contains("pitch deck") || lower.contains("presentation")) {
-            tasks.add(buildTask(workflowId, "task-1", "RESEARCH", "Market Research & Competitor Intelligence", "", 1, "MEDIUM"));
-            tasks.add(buildTask(workflowId, "task-2", "PITCH_DECK", "Slide Deck Strategy & Financial Model", "task-1", 2, "HIGH"));
-            tasks.add(buildTask(workflowId, "task-3", "LOGO_DESIGN", "Brand Identity & Pitch Visual Assets", "task-1", 2, "MEDIUM"));
-            tasks.add(buildTask(workflowId, "task-4", "TESTING", "Deck Content Audit & Verification", "task-2,task-3", 3, "LOW"));
-        } else if (lower.contains("landing page") || lower.contains("website") || lower.contains("app")) {
-            tasks.add(buildTask(workflowId, "task-1", "RESEARCH", "User Experience & Market Research", "", 1, "LOW"));
-            tasks.add(buildTask(workflowId, "task-2", "LOGO_DESIGN", "Brand Logo & Graphic Design", "task-1", 2, "MEDIUM"));
-            tasks.add(buildTask(workflowId, "task-3", "FRONTEND", "React UI Code Generation", "task-1,task-2", 3, "HIGH"));
-            tasks.add(buildTask(workflowId, "task-4", "BACKEND", "REST API & Microservice Specs", "task-1", 3, "MEDIUM"));
-            tasks.add(buildTask(workflowId, "task-5", "TESTING", "Full-Stack Security & QA Audit", "task-3,task-4", 4, "LOW"));
-        } else if (lower.contains("competitor") || lower.contains("research")) {
-            tasks.add(buildTask(workflowId, "task-1", "RESEARCH", "Industry Competitor Deep-Dive", "", 1, "MEDIUM"));
-            tasks.add(buildTask(workflowId, "task-2", "PITCH_DECK", "Competitive Landscape Synthesis", "task-1", 2, "MEDIUM"));
-            tasks.add(buildTask(workflowId, "task-3", "TESTING", "Data Source Integrity Verification", "task-2", 3, "LOW"));
-        } else if (lower.contains("logo") || lower.contains("brand")) {
-            tasks.add(buildTask(workflowId, "task-1", "RESEARCH", "Brand Positioning & Target Demographic", "", 1, "LOW"));
-            tasks.add(buildTask(workflowId, "task-2", "LOGO_DESIGN", "SVG Logo & Graphic Identity Package", "task-1", 2, "HIGH"));
-            tasks.add(buildTask(workflowId, "task-3", "TESTING", "Visual Assets & Format Audit", "task-2", 3, "LOW"));
-        } else {
-            // Default generic multi-agent workflow
-            tasks.add(buildTask(workflowId, "task-1", "RESEARCH", "Domain Research & Requirements Analysis", "", 1, "MEDIUM"));
-            tasks.add(buildTask(workflowId, "task-2", "LOGO_DESIGN", "Visual Identity & Architecture Design", "task-1", 2, "MEDIUM"));
-            tasks.add(buildTask(workflowId, "task-3", "FRONTEND", "Implementation & Code Synthesis", "task-1,task-2", 3, "HIGH"));
-            tasks.add(buildTask(workflowId, "task-4", "TESTING", "Quality Assurance & Algorand Contract Validation", "task-3", 4, "LOW"));
-        }
+    private final TaskRepository taskRepository;
+    private final WorkflowRepository workflowRepository;
+    private final AgentDiscoveryService discoveryService;
 
-        return tasks;
+    public PlannerService(TaskRepository taskRepository, WorkflowRepository workflowRepository, AgentDiscoveryService discoveryService) {
+        this.taskRepository = taskRepository;
+        this.workflowRepository = workflowRepository;
+        this.discoveryService = discoveryService;
     }
 
-    private Task buildTask(String workflowId, String taskIdSuffix, String type, String description, String dependencies, int priority, String complexity) {
-        String fullTaskId = workflowId + "-" + taskIdSuffix;
-        return Task.builder()
-                .id(fullTaskId)
-                .workflowId(workflowId)
-                .taskType(type)
-                .description(description)
-                .status("PENDING")
-                .dependencies(dependencies)
-                .priority(priority)
-                .estimatedComplexity(complexity)
-                .executionTimeMs(0L)
+    @Transactional
+    public List<Task> decomposeAndQuote(Workflow workflow) {
+        List<Task> tasks = decomposePrompt(workflow);
+
+        double totalWorkflowPrice = 0.0;
+        for (Task task : tasks) {
+            discoveryService.collectAndScoreQuotesForTask(task);
+            if (task.getPrice() != null) {
+                totalWorkflowPrice += task.getPrice();
+            }
+        }
+
+        workflow.setTotalPrice(Math.round(totalWorkflowPrice * 100.0) / 100.0);
+        workflowRepository.save(workflow);
+
+        log.info("Decomposed workflow {} into {} tasks. Total estimated cost: {} Algos", workflow.getId(), tasks.size(), workflow.getTotalPrice());
+        return taskRepository.saveAll(tasks);
+    }
+
+    private List<Task> decomposePrompt(Workflow workflow) {
+        String prompt = workflow.getPrompt().toLowerCase();
+        List<Task> tasks = new ArrayList<>();
+        String wfId = workflow.getId();
+
+        // 1. Research Task
+        Task researchTask = Task.builder()
+                .id(wfId + "-task-1")
+                .workflow(workflow)
+                .taskType(TaskType.RESEARCH)
+                .description("User Experience & Market Research")
+                .dependency("")
+                .priority(1)
+                .estimatedComplexity("LOW")
+                .status(TaskStatus.PENDING)
+                .createdAt(LocalDateTime.now())
                 .build();
+        tasks.add(researchTask);
+
+        if (prompt.contains("pitch") || prompt.contains("deck") || prompt.contains("slide") || prompt.contains("presentation")) {
+            Task pptTask = Task.builder()
+                    .id(wfId + "-task-2")
+                    .workflow(workflow)
+                    .taskType(TaskType.PITCH_DECK)
+                    .description("Pitch Deck & Business Model Architecture")
+                    .dependency("task-1")
+                    .priority(2)
+                    .estimatedComplexity("MEDIUM")
+                    .status(TaskStatus.PENDING)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            tasks.add(pptTask);
+        }
+
+        if (prompt.contains("logo") || prompt.contains("brand") || prompt.contains("graphic") || prompt.contains("landing") || prompt.contains("startup")) {
+            Task logoTask = Task.builder()
+                    .id(wfId + "-task-3")
+                    .workflow(workflow)
+                    .taskType(TaskType.LOGO_DESIGN)
+                    .description("Brand Logo & Graphic Design")
+                    .dependency("task-1")
+                    .priority(2)
+                    .estimatedComplexity("MEDIUM")
+                    .status(TaskStatus.PENDING)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            tasks.add(logoTask);
+        }
+
+        if (prompt.contains("landing") || prompt.contains("page") || prompt.contains("web") || prompt.contains("code") || prompt.contains("app")) {
+            Task feTask = Task.builder()
+                    .id(wfId + "-task-4")
+                    .workflow(workflow)
+                    .taskType(TaskType.FRONTEND)
+                    .description("React UI Code Generation")
+                    .dependency("task-1")
+                    .priority(3)
+                    .estimatedComplexity("HIGH")
+                    .status(TaskStatus.PENDING)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            tasks.add(feTask);
+
+            Task beTask = Task.builder()
+                    .id(wfId + "-task-5")
+                    .workflow(workflow)
+                    .taskType(TaskType.BACKEND)
+                    .description("REST API & Microservice Specs")
+                    .dependency("task-1")
+                    .priority(3)
+                    .estimatedComplexity("MEDIUM")
+                    .status(TaskStatus.PENDING)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            tasks.add(beTask);
+        }
+
+        // QA & Security Task
+        Task qaTask = Task.builder()
+                .id(wfId + "-task-final")
+                .workflow(workflow)
+                .taskType(TaskType.TESTING)
+                .description("Full-Stack Security & QA Audit")
+                .dependency("task-1")
+                .priority(4)
+                .estimatedComplexity("LOW")
+                .status(TaskStatus.PENDING)
+                .createdAt(LocalDateTime.now())
+                .build();
+        tasks.add(qaTask);
+
+        return tasks;
     }
 }

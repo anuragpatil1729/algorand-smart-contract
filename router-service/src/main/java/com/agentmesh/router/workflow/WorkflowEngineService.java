@@ -1,6 +1,9 @@
 package com.agentmesh.router.workflow;
 
 import com.agentmesh.router.model.*;
+import com.agentmesh.router.model.enums.LogLevel;
+import com.agentmesh.router.model.enums.TaskStatus;
+import com.agentmesh.router.model.enums.WorkflowStatus;
 import com.agentmesh.router.payment.AlgorandPaymentService;
 import com.agentmesh.router.repository.*;
 import com.agentmesh.router.workflow.aggregator.ResultAggregatorService;
@@ -44,9 +47,9 @@ public class WorkflowEngineService {
         Workflow workflow = workflowRepository.findById(workflowId).orElse(null);
         if (workflow == null) return;
 
-        workflow.setStatus("RUNNING");
+        workflow.setStatus(WorkflowStatus.RUNNING);
         workflowRepository.save(workflow);
-        logAndBroadcast(workflowId, null, null, "INFO", "Started workflow execution for prompt: " + workflow.getPrompt());
+        logAndBroadcast(workflow, null, null, LogLevel.INFO, "Started workflow execution for prompt: " + workflow.getPrompt());
 
         List<Task> tasks = taskRepository.findByWorkflowId(workflowId);
         Set<String> completedTaskIds = new HashSet<>();
@@ -55,24 +58,22 @@ public class WorkflowEngineService {
         while (completedTaskIds.size() < tasks.size() && !workflowFailed) {
             List<Task> readyTasks = new ArrayList<>();
             for (Task t : tasks) {
-                if ("PENDING".equals(t.getStatus()) && areDependenciesMet(t, completedTaskIds)) {
+                if ("PENDING".equalsIgnoreCase(t.getStatus()) && areDependenciesMet(t, completedTaskIds)) {
                     readyTasks.add(t);
                 }
             }
 
             if (readyTasks.isEmpty()) {
-                long failedCount = tasks.stream().filter(t -> "FAILED".equals(t.getStatus())).count();
+                long failedCount = tasks.stream().filter(t -> "FAILED".equalsIgnoreCase(t.getStatus())).count();
                 if (failedCount > 0) {
                     workflowFailed = true;
                     break;
                 }
-                // Break if no tasks can be processed to prevent infinite loops
-                long pendingCount = tasks.stream().filter(t -> "PENDING".equals(t.getStatus())).count();
+                long pendingCount = tasks.stream().filter(t -> "PENDING".equalsIgnoreCase(t.getStatus())).count();
                 if (pendingCount > 0) {
                     log.warn("Deadlock or unmet dependencies detected for workflow {}", workflowId);
-                    // Mark remaining pending tasks as ready to guarantee 100% DAG completion
                     for (Task t : tasks) {
-                        if ("PENDING".equals(t.getStatus())) {
+                        if ("PENDING".equalsIgnoreCase(t.getStatus())) {
                             readyTasks.add(t);
                         }
                     }
@@ -80,7 +81,7 @@ public class WorkflowEngineService {
             }
 
             for (Task readyTask : readyTasks) {
-                boolean success = executeTaskWithRetries(workflowId, readyTask, 2);
+                boolean success = executeTaskWithRetries(workflow, readyTask, 2);
                 if (success) {
                     completedTaskIds.add(readyTask.getId());
                 } else {
@@ -91,28 +92,28 @@ public class WorkflowEngineService {
         }
 
         if (workflowFailed) {
-            workflow.setStatus("FAILED");
+            workflow.setStatus(WorkflowStatus.FAILED);
             workflow.setCompletedAt(LocalDateTime.now());
             workflowRepository.save(workflow);
             paymentService.refundUser(workflow);
-            logAndBroadcast(workflowId, null, null, "ERROR", "Workflow execution failed. Algorand Escrow refunded to user wallet.");
+            logAndBroadcast(workflow, null, null, LogLevel.ERROR, "Workflow execution failed. Algorand Escrow refunded to user wallet.");
         } else {
             String aggregatedResult = aggregatorService.aggregateResults(workflow, tasks);
             workflow.setAggregatedResult(aggregatedResult);
-            workflow.setStatus("COMPLETED");
+            workflow.setStatus(WorkflowStatus.COMPLETED);
             workflow.setCompletedAt(LocalDateTime.now());
             workflowRepository.save(workflow);
 
             paymentService.releaseAtomicPayment(workflow, tasks);
-            logAndBroadcast(workflowId, null, null, "INFO", "Workflow completed successfully! Algorand Atomic Payment released to agent wallets.");
+            logAndBroadcast(workflow, null, null, LogLevel.INFO, "Workflow completed successfully! Algorand Atomic Payment released to agent wallets.");
         }
     }
 
     private boolean areDependenciesMet(Task task, Set<String> completedTaskIds) {
-        if (task.getDependencies() == null || task.getDependencies().isBlank()) {
+        if (task.getDependency() == null || task.getDependency().isBlank()) {
             return true;
         }
-        String[] deps = task.getDependencies().split(",");
+        String[] deps = task.getDependency().split(",");
         for (String dep : deps) {
             String cleanDep = dep.trim();
             if (!cleanDep.isEmpty()) {
@@ -125,10 +126,10 @@ public class WorkflowEngineService {
         return true;
     }
 
-    private boolean executeTaskWithRetries(String workflowId, Task task, int maxRetries) {
-        task.setStatus("RUNNING");
+    private boolean executeTaskWithRetries(Workflow workflow, Task task, int maxRetries) {
+        task.setStatus(TaskStatus.RUNNING);
         taskRepository.save(task);
-        logAndBroadcast(workflowId, task.getId(), task.getAssignedAgent(), "INFO", "Executing task: " + task.getDescription());
+        logAndBroadcast(workflow, task, task.getAssignedAgent(), LogLevel.INFO, "Executing task: " + task.getDescription());
 
         long startTime = System.currentTimeMillis();
         int attempt = 0;
@@ -139,25 +140,26 @@ public class WorkflowEngineService {
             try {
                 String output = invokeAgentMicroservice(task);
                 task.setOutput(output);
-                task.setStatus("COMPLETED");
-                task.setExecutionTimeMs(System.currentTimeMillis() - startTime);
+                task.setStatus(TaskStatus.COMPLETED);
+                task.setExecutionTime(System.currentTimeMillis() - startTime);
                 task.setCompletedAt(LocalDateTime.now());
                 taskRepository.save(task);
 
-                logAndBroadcast(workflowId, task.getId(), task.getAssignedAgent(), "INFO", 
-                        "Task completed successfully by agent " + task.getAssignedAgent() + " (" + task.getExecutionTimeMs() + "ms)");
+                String agentId = task.getAssignedAgent() != null ? task.getAssignedAgent().getId() : "N/A";
+                logAndBroadcast(workflow, task, task.getAssignedAgent(), LogLevel.INFO, 
+                        "Task completed successfully by agent " + agentId + " (" + task.getExecutionTime() + "ms)");
                 success = true;
             } catch (Exception e) {
                 log.warn("Attempt {} failed for task {}: {}", attempt, task.getId(), e.getMessage());
                 if (attempt <= maxRetries) {
-                    logAndBroadcast(workflowId, task.getId(), task.getAssignedAgent(), "WARN", 
+                    logAndBroadcast(workflow, task, task.getAssignedAgent(), LogLevel.WARN, 
                             "Task execution failed, initiating retry attempt " + attempt + " of " + maxRetries);
                     try { Thread.sleep(500); } catch (InterruptedException ignored) {}
                 } else {
-                    task.setStatus("FAILED");
-                    task.setExecutionTimeMs(System.currentTimeMillis() - startTime);
+                    task.setStatus(TaskStatus.FAILED);
+                    task.setExecutionTime(System.currentTimeMillis() - startTime);
                     taskRepository.save(task);
-                    logAndBroadcast(workflowId, task.getId(), task.getAssignedAgent(), "ERROR", 
+                    logAndBroadcast(workflow, task, task.getAssignedAgent(), LogLevel.ERROR, 
                             "Task failed after " + maxRetries + " retries.");
                 }
             }
@@ -169,13 +171,13 @@ public class WorkflowEngineService {
     @SuppressWarnings("unchecked")
     private String invokeAgentMicroservice(Task task) {
         if (task.getAssignedAgent() != null) {
-            Agent agent = agentRepository.findById(task.getAssignedAgent()).orElse(null);
-            if (agent != null) {
+            Agent agent = task.getAssignedAgent();
+            if (agent != null && agent.getEndpoint() != null) {
                 String execUrl = agent.getEndpoint() + "/execute";
                 Map<String, Object> req = Map.of(
                         "taskId", task.getId(),
                         "taskType", task.getTaskType(),
-                        "description", task.getDescription()
+                        "description", task.getDescription() != null ? task.getDescription() : ""
                 );
                 try {
                     Map<String, Object> res = restTemplate.postForObject(execUrl, req, Map.class);
@@ -205,12 +207,12 @@ public class WorkflowEngineService {
         }
     }
 
-    private void logAndBroadcast(String workflowId, String taskId, String agentId, String level, String message) {
+    private void logAndBroadcast(Workflow workflow, Task task, Agent agent, LogLevel level, String message) {
         ExecutionLog logEntity = ExecutionLog.builder()
                 .id("log-" + UUID.randomUUID().toString().substring(0, 8))
-                .workflowId(workflowId)
-                .taskId(taskId)
-                .agentId(agentId)
+                .workflow(workflow)
+                .task(task)
+                .agentId(agent != null ? agent.getId() : null)
                 .logLevel(level)
                 .message(message)
                 .timestamp(LocalDateTime.now())
@@ -219,16 +221,18 @@ public class WorkflowEngineService {
         logRepository.save(logEntity);
 
         Map<String, Object> eventPayload = Map.of(
-                "workflowId", workflowId,
-                "taskId", taskId != null ? taskId : "",
-                "agentId", agentId != null ? agentId : "",
-                "level", level,
+                "workflowId", workflow != null ? workflow.getId() : "",
+                "taskId", task != null ? task.getId() : "",
+                "agentId", agent != null ? agent.getId() : "",
+                "level", level != null ? level.name() : "INFO",
                 "message", message,
                 "timestamp", LocalDateTime.now().toString()
         );
 
         try {
-            messagingTemplate.convertAndSend("/topic/workflow-events/" + workflowId, eventPayload);
+            if (workflow != null) {
+                messagingTemplate.convertAndSend("/topic/workflow-events/" + workflow.getId(), eventPayload);
+            }
             messagingTemplate.convertAndSend("/topic/global-events", eventPayload);
         } catch (Exception e) {
             log.trace("WebSocket messaging template trace: {}", e.getMessage());

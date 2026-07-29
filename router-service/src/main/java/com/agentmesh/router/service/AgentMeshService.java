@@ -1,8 +1,9 @@
 package com.agentmesh.router.service;
 
-import com.agentmesh.router.discovery.AgentDiscoveryService;
 import com.agentmesh.router.dto.*;
 import com.agentmesh.router.model.*;
+import com.agentmesh.router.model.enums.HealthStatus;
+import com.agentmesh.router.model.enums.WorkflowStatus;
 import com.agentmesh.router.payment.AlgorandPaymentService;
 import com.agentmesh.router.planner.PlannerService;
 import com.agentmesh.router.repository.*;
@@ -29,13 +30,11 @@ public class AgentMeshService {
     private final TransactionRepository transactionRepository;
     private final ExecutionLogRepository logRepository;
     private final ScoringConfigRepository scoringConfigRepository;
-
     private final PlannerService plannerService;
-    private final AgentDiscoveryService discoveryService;
-    private final WorkflowEngineService workflowEngineService;
+    private final WorkflowEngineService workflowEngine;
     private final AlgorandPaymentService paymentService;
 
-    public AgentMeshService(WorkflowRepository workflowRepository, TaskRepository taskRepository, QuoteRepository quoteRepository, AgentRepository agentRepository, PaymentRepository paymentRepository, TransactionRepository transactionRepository, ExecutionLogRepository logRepository, ScoringConfigRepository scoringConfigRepository, PlannerService plannerService, AgentDiscoveryService discoveryService, WorkflowEngineService workflowEngineService, AlgorandPaymentService paymentService) {
+    public AgentMeshService(WorkflowRepository workflowRepository, TaskRepository taskRepository, QuoteRepository quoteRepository, AgentRepository agentRepository, PaymentRepository paymentRepository, TransactionRepository transactionRepository, ExecutionLogRepository logRepository, ScoringConfigRepository scoringConfigRepository, PlannerService plannerService, WorkflowEngineService workflowEngine, AlgorandPaymentService paymentService) {
         this.workflowRepository = workflowRepository;
         this.taskRepository = taskRepository;
         this.quoteRepository = quoteRepository;
@@ -45,263 +44,133 @@ public class AgentMeshService {
         this.logRepository = logRepository;
         this.scoringConfigRepository = scoringConfigRepository;
         this.plannerService = plannerService;
-        this.discoveryService = discoveryService;
-        this.workflowEngineService = workflowEngineService;
+        this.workflowEngine = workflowEngine;
         this.paymentService = paymentService;
     }
 
     @Transactional
-    public WorkflowResponse createWorkflow(WorkflowRequest request) {
-        discoveryService.initDefaultAgents();
-
+    public WorkflowDto createWorkflow(WorkflowRequestDto request) {
         String workflowId = "wf-" + UUID.randomUUID().toString().substring(0, 8);
         Workflow workflow = Workflow.builder()
                 .id(workflowId)
                 .prompt(request.getPrompt())
-                .status("PENDING_APPROVAL")
+                .status(WorkflowStatus.PENDING_APPROVAL)
                 .totalPrice(0.0)
-                .escrowStatus("NOT_CREATED")
                 .createdAt(LocalDateTime.now())
                 .build();
 
         workflowRepository.save(workflow);
-
-        List<Task> tasks = plannerService.decomposePrompt(workflowId, request.getPrompt());
-        double totalPrice = 0.0;
-
-        for (Task task : tasks) {
-            taskRepository.save(task);
-            List<Quote> quotes = discoveryService.collectAndScoreQuotesForTask(task);
-            Quote selectedQuote = quotes.stream().filter(Quote::getSelected).findFirst().orElse(null);
-            if (selectedQuote != null) {
-                totalPrice += selectedQuote.getPrice();
-            }
-        }
-
-        workflow.setTotalPrice(Math.round(totalPrice * 100.0) / 100.0);
-        workflowRepository.save(workflow);
-
-        return getWorkflowDetails(workflowId);
+        plannerService.decomposeAndQuote(workflow);
+        return getWorkflowById(workflowId);
     }
 
-    public WorkflowResponse getWorkflowDetails(String id) {
-        Workflow workflow = workflowRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Workflow not found: " + id));
+    public WorkflowDto getWorkflowById(String id) {
+        Workflow workflow = workflowRepository.findById(id).orElse(null);
+        if (workflow == null) return null;
 
         List<Task> tasks = taskRepository.findByWorkflowId(id);
-        List<TaskDto> taskDtos = tasks.stream().map(task -> {
-            List<Quote> quotes = quoteRepository.findByTaskId(task.getId());
-            List<ScoredQuoteDto> quoteDtos = quotes.stream().map(q -> {
-                Agent agent = agentRepository.findById(q.getAgentId()).orElse(null);
-                String agentName = (agent != null) ? agent.getName() : q.getAgentId();
-                return ScoredQuoteDto.builder()
-                        .id(q.getId())
-                        .agentId(q.getAgentId())
-                        .agentName(agentName)
-                        .price(q.getPrice())
-                        .estimatedTimeSeconds(q.getEstimatedTimeSeconds())
-                        .confidence(q.getConfidence())
-                        .successRate(q.getSuccessRate())
-                        .rating(q.getRating())
-                        .score(q.getScore())
-                        .selected(q.getSelected())
-                        .build();
-            }).collect(Collectors.toList());
+        List<TaskDto> taskDtos = tasks.stream().map(t -> {
+            List<Quote> quotes = quoteRepository.findByTaskId(t.getId());
+            List<QuoteDto> quoteDtos = quotes.stream().map(q -> 
+                new QuoteDto(q.getId(), q.getAgentId(), q.getAgent() != null ? q.getAgent().getName() : "Agent", q.getPrice(), q.getEstimatedTimeSeconds(), q.getConfidence(), q.getSuccessRate(), q.getRating(), q.getScore(), q.getSelected())
+            ).collect(Collectors.toList());
 
-            List<String> deps = (task.getDependencies() != null && !task.getDependencies().isBlank())
-                    ? Arrays.asList(task.getDependencies().split(","))
-                    : Collections.emptyList();
+            String agentId = t.getAssignedAgent() != null ? t.getAssignedAgent().getId() : null;
+            String deps = t.getDependency() != null ? t.getDependency() : "";
+            List<String> depList = Arrays.stream(deps.split(",")).map(String::trim).filter(s -> !s.isEmpty()).collect(Collectors.toList());
 
-            return TaskDto.builder()
-                    .id(task.getId())
-                    .workflowId(task.getWorkflowId())
-                    .taskType(task.getTaskType())
-                    .description(task.getDescription())
-                    .assignedAgent(task.getAssignedAgent())
-                    .status(task.getStatus())
-                    .price(task.getPrice())
-                    .dependencies(deps)
-                    .priority(task.getPriority())
-                    .estimatedComplexity(task.getEstimatedComplexity())
-                    .executionTimeMs(task.getExecutionTimeMs())
-                    .output(task.getOutput())
-                    .quotes(quoteDtos)
-                    .createdAt(task.getCreatedAt())
-                    .completedAt(task.getCompletedAt())
-                    .build();
+            return new TaskDto(t.getId(), t.getWorkflowId(), t.getTaskType(), t.getDescription(), agentId, t.getStatus(), t.getPrice(), depList, t.getPriority(), t.getEstimatedComplexity(), t.getExecutionTimeMs(), t.getOutput(), quoteDtos);
         }).collect(Collectors.toList());
 
-        return WorkflowResponse.builder()
-                .id(workflow.getId())
-                .prompt(workflow.getPrompt())
-                .status(workflow.getStatus())
-                .totalPrice(workflow.getTotalPrice())
-                .escrowAddress(workflow.getEscrowAddress())
-                .escrowStatus(workflow.getEscrowStatus())
-                .aggregatedResult(workflow.getAggregatedResult())
-                .tasks(taskDtos)
-                .createdAt(workflow.getCreatedAt())
-                .completedAt(workflow.getCompletedAt())
-                .build();
+        return new WorkflowDto(workflow.getId(), workflow.getPrompt(), workflow.getStatus(), workflow.getTotalPrice(), workflow.getEscrowAddress(), workflow.getEscrowStatus(), workflow.getAggregatedResult(), taskDtos);
     }
 
-    public List<WorkflowResponse> listAllWorkflows() {
-        return workflowRepository.findAll().stream()
-                .map(w -> getWorkflowDetails(w.getId()))
-                .collect(Collectors.toList());
+    public List<WorkflowDto> getAllWorkflows() {
+        return workflowRepository.findAll().stream().map(w -> getWorkflowById(w.getId())).collect(Collectors.toList());
     }
 
     @Transactional
-    public WorkflowResponse approveWorkflow(String id) {
-        Workflow workflow = workflowRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Workflow not found: " + id));
+    public WorkflowDto approveAndExecute(String workflowId) {
+        Workflow workflow = workflowRepository.findById(workflowId).orElse(null);
+        if (workflow == null) return null;
 
+        workflow.setStatus(WorkflowStatus.APPROVED);
         paymentService.lockFundsInEscrow(workflow);
-        workflow.setStatus("APPROVED");
-        workflowRepository.save(workflow);
-
-        return getWorkflowDetails(id);
+        workflowEngine.executeWorkflow(workflowId);
+        return getWorkflowById(workflowId);
     }
 
-    public WorkflowResponse executeWorkflow(String id) {
-        Workflow workflow = workflowRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Workflow not found: " + id));
-
-        if ("PENDING_APPROVAL".equals(workflow.getStatus())) {
-            approveWorkflow(id);
-        }
-
-        workflowEngineService.executeWorkflow(id);
-        return getWorkflowDetails(id);
-    }
-
-    public List<AgentDto> listAgents(String capability) {
-        discoveryService.initDefaultAgents();
-        List<Agent> agents = agentRepository.findAll();
-        return agents.stream()
-                .filter(a -> capability == null || capability.isBlank() || a.getSupportedCapabilities().toLowerCase().contains(capability.toLowerCase()))
-                .map(a -> AgentDto.builder()
-                        .id(a.getId())
-                        .name(a.getName())
-                        .endpoint(a.getEndpoint())
-                        .walletAddress(a.getWalletAddress())
-                        .rating(a.getRating())
-                        .successRate(a.getSuccessRate())
-                        .healthStatus(a.getHealthStatus())
-                        .basePrice(a.getBasePrice())
-                        .supportedCapabilities(Arrays.asList(a.getSupportedCapabilities().split(",")))
-                        .build())
-                .collect(Collectors.toList());
+    public List<AgentDto> getAllAgents() {
+        return agentRepository.findAll().stream().map(a -> 
+            new AgentDto(a.getId(), a.getName(), a.getEndpoint(), a.getWalletAddress(), a.getRating(), a.getSuccessRate(), a.getHealthStatus(), a.getBasePrice(), Arrays.asList(a.getCapabilities().split(",")))
+        ).collect(Collectors.toList());
     }
 
     @Transactional
-    public AgentDto registerAgent(AgentRegistrationDto reg) {
-        String capabilitiesStr = (reg.getSupportedCapabilities() != null)
-                ? String.join(",", reg.getSupportedCapabilities())
-                : "GENERAL";
-
+    public AgentDto registerAgent(AgentDto request) {
+        String id = request.getId() != null ? request.getId() : "agent-" + UUID.randomUUID().toString().substring(0, 8);
+        String caps = request.getSupportedCapabilities() != null ? String.join(",", request.getSupportedCapabilities()) : "GENERAL";
         Agent agent = Agent.builder()
-                .id(reg.getId() != null ? reg.getId() : "agent-custom-" + UUID.randomUUID().toString().substring(0, 6))
-                .name(reg.getName())
-                .endpoint(reg.getEndpoint())
-                .walletAddress(reg.getWalletAddress() != null ? reg.getWalletAddress() : "ALG-WALLET-CUSTOM-" + UUID.randomUUID().toString().substring(0, 8))
-                .rating(reg.getRating() != null ? reg.getRating() : 4.8)
-                .successRate(reg.getSuccessRate() != null ? reg.getSuccessRate() : 98.0)
-                .healthStatus("UP")
-                .basePrice(reg.getBasePrice() != null ? reg.getBasePrice() : 50.0)
-                .supportedCapabilities(capabilitiesStr)
+                .id(id)
+                .name(request.getName())
+                .endpoint(request.getEndpoint())
+                .walletAddress(request.getWalletAddress())
+                .rating(request.getRating() != null ? request.getRating() : 4.5)
+                .successRate(request.getSuccessRate() != null ? request.getSuccessRate() : 95.0)
+                .healthStatus(HealthStatus.UP)
+                .basePrice(request.getBasePrice() != null ? request.getBasePrice() : 50.0)
+                .capabilities(caps)
                 .build();
 
         agentRepository.save(agent);
-
-        return AgentDto.builder()
-                .id(agent.getId())
-                .name(agent.getName())
-                .endpoint(agent.getEndpoint())
-                .walletAddress(agent.getWalletAddress())
-                .rating(agent.getRating())
-                .successRate(agent.getSuccessRate())
-                .healthStatus(agent.getHealthStatus())
-                .basePrice(agent.getBasePrice())
-                .supportedCapabilities(Arrays.asList(agent.getSupportedCapabilities().split(",")))
-                .build();
+        return new AgentDto(agent.getId(), agent.getName(), agent.getEndpoint(), agent.getWalletAddress(), agent.getRating(), agent.getSuccessRate(), agent.getHealthStatus(), agent.getBasePrice(), Arrays.asList(agent.getCapabilities().split(",")));
     }
 
     public PaymentDetailsDto getPaymentDetails(String workflowId) {
-        Payment payment = paymentRepository.findByWorkflowId(workflowId)
-                .orElseThrow(() -> new RuntimeException("Payment record not found for workflow: " + workflowId));
-
-        List<Transaction> transactions = transactionRepository.findByPaymentId(payment.getId());
-        List<PaymentDetailsDto.TransactionDto> txDtos = transactions.stream().map(t ->
-                PaymentDetailsDto.TransactionDto.builder()
-                        .id(t.getId())
-                        .txHash(t.getTxHash())
-                        .senderWallet(t.getSenderWallet())
-                        .receiverWallet(t.getReceiverWallet())
-                        .amount(t.getAmount())
-                        .agentId(t.getAgentId())
-                        .status(t.getStatus())
-                        .blockRound(t.getBlockRound())
-                        .timestamp(t.getTimestamp())
-                        .build()
+        Payment payment = paymentRepository.findByWorkflowId(workflowId).orElse(null);
+        if (payment == null) return null;
+        List<Transaction> txs = transactionRepository.findByPaymentId(payment.getId());
+        List<PaymentDetailsDto.TransactionDto> txDtos = txs.stream().map(t ->
+            new PaymentDetailsDto.TransactionDto(t.getTxHash(), t.getSenderWallet(), t.getReceiverWallet(), t.getAmount(), t.getAgentId(), t.getStatus(), t.getBlockRound(), t.getTimestamp().toString())
         ).collect(Collectors.toList());
 
-        return PaymentDetailsDto.builder()
-                .id(payment.getId())
-                .workflowId(payment.getWorkflowId())
-                .escrowWallet(payment.getEscrowWallet())
-                .totalAmount(payment.getTotalAmount())
-                .status(payment.getStatus())
-                .txGroupId(payment.getTxGroupId())
-                .transactions(txDtos)
-                .createdAt(payment.getCreatedAt())
-                .completedAt(payment.getCompletedAt())
-                .build();
+        return new PaymentDetailsDto(payment.getId(), payment.getWorkflowId(), payment.getEscrowWallet(), payment.getTotalAmount(), payment.getStatus(), payment.getTxGroupId(), payment.getCreatedAt().toString(), payment.getCompletedAt() != null ? payment.getCompletedAt().toString() : null, txDtos);
     }
 
-    public AnalyticsSummaryDto getAnalyticsSummary() {
-        discoveryService.initDefaultAgents();
-        long totalAgents = agentRepository.count();
-        long activeWorkflows = workflowRepository.findByStatus("RUNNING").size() + workflowRepository.findByStatus("PENDING_APPROVAL").size();
-        long completedWorkflows = workflowRepository.findByStatus("COMPLETED").size();
-        long totalTransactions = transactionRepository.count();
+    public List<PaymentDetailsDto> getAllPayments() {
+        return paymentRepository.findAll().stream().map(p -> getPaymentDetails(p.getWorkflowId())).filter(Objects::nonNull).collect(Collectors.toList());
+    }
 
-        List<Transaction> allTxs = transactionRepository.findAll();
-        double totalRevenue = allTxs.stream()
-                .filter(t -> "NETWORK_ROUTER_FEE_POOL".equals(t.getReceiverWallet()))
-                .mapToDouble(Transaction::getAmount)
+    public AnalyticsDto getAnalytics() {
+        long totalWorkflows = workflowRepository.count();
+        long completedWorkflows = workflowRepository.findByStatus(WorkflowStatus.COMPLETED).size();
+        long activeAgents = agentRepository.count();
+
+        double totalRevenue = paymentRepository.findAll().stream()
+                .filter(p -> "DISBURSED".equalsIgnoreCase(p.getStatus()))
+                .mapToDouble(Payment::getTotalAmount)
                 .sum();
 
-        Map<String, Long> agentUsageMap = new HashMap<>();
-        taskRepository.findAll().stream()
-                .filter(t -> t.getAssignedAgent() != null)
-                .forEach(t -> agentUsageMap.merge(t.getAssignedAgent(), 1L, Long::sum));
-
-        Map<String, Double> costMap = new HashMap<>();
-        workflowRepository.findAll().forEach(w -> costMap.put(w.getId(), w.getTotalPrice()));
-
-        List<AnalyticsSummaryDto.DailyMetricDto> dailyMetrics = List.of(
-                new AnalyticsSummaryDto.DailyMetricDto("Mon", 4, 18.5),
-                new AnalyticsSummaryDto.DailyMetricDto("Tue", 8, 34.0),
-                new AnalyticsSummaryDto.DailyMetricDto("Wed", 12, 52.8),
-                new AnalyticsSummaryDto.DailyMetricDto("Thu", 15, 68.2),
-                new AnalyticsSummaryDto.DailyMetricDto("Fri", 19, 94.6),
-                new AnalyticsSummaryDto.DailyMetricDto("Sat", 11, 48.0),
-                new AnalyticsSummaryDto.DailyMetricDto("Sun", 14, 62.4)
+        List<AnalyticsDto.TaskTypeMetric> taskMetrics = List.of(
+                new AnalyticsDto.TaskTypeMetric("RESEARCH", 42),
+                new AnalyticsDto.TaskTypeMetric("FRONTEND", 35),
+                new AnalyticsDto.TaskTypeMetric("BACKEND", 28),
+                new AnalyticsDto.TaskTypeMetric("LOGO_DESIGN", 22),
+                new AnalyticsDto.TaskTypeMetric("TESTING", 19)
         );
 
-        return AnalyticsSummaryDto.builder()
-                .totalAgents(totalAgents)
-                .activeWorkflows(activeWorkflows)
-                .completedWorkflows(completedWorkflows)
-                .totalTransactions(totalTransactions)
-                .overallSuccessRate(97.8)
-                .avgExecutionTimeSeconds(14.2)
-                .totalRevenueAlgos(Math.round(totalRevenue * 100.0) / 100.0)
-                .agentUsageMap(agentUsageMap)
-                .costDistributionMap(costMap)
-                .recentActivity(dailyMetrics)
-                .build();
+        return new AnalyticsDto(totalWorkflows, completedWorkflows, activeAgents, Math.round(totalRevenue * 100.0) / 100.0, 98.4, taskMetrics);
+    }
+
+    public ScoringConfig getScoringConfig() {
+        return scoringConfigRepository.findById("DEFAULT")
+                .orElse(ScoringConfig.builder().id("DEFAULT").build());
+    }
+
+    @Transactional
+    public ScoringConfig updateScoringConfig(ScoringConfig config) {
+        config.setId("DEFAULT");
+        return scoringConfigRepository.save(config);
     }
 
     public List<ExecutionLog> getLogs(String workflowId) {
@@ -309,32 +178,5 @@ public class AgentMeshService {
             return logRepository.findByWorkflowIdOrderByTimestampDesc(workflowId);
         }
         return logRepository.findTop100ByOrderByTimestampDesc();
-    }
-
-    public ScoringConfigDto getScoringConfig() {
-        ScoringConfig config = scoringConfigRepository.findById("DEFAULT")
-                .orElseGet(() -> ScoringConfig.builder().build());
-        return ScoringConfigDto.builder()
-                .reputationWeight(config.getReputationWeight())
-                .successRateWeight(config.getSuccessRateWeight())
-                .confidenceWeight(config.getConfidenceWeight())
-                .priceWeight(config.getPriceWeight())
-                .etaWeight(config.getEtaWeight())
-                .build();
-    }
-
-    @Transactional
-    public ScoringConfigDto updateScoringConfig(ScoringConfigDto dto) {
-        ScoringConfig config = scoringConfigRepository.findById("DEFAULT")
-                .orElse(ScoringConfig.builder().id("DEFAULT").build());
-
-        config.setReputationWeight(dto.getReputationWeight());
-        config.setSuccessRateWeight(dto.getSuccessRateWeight());
-        config.setConfidenceWeight(dto.getConfidenceWeight());
-        config.setPriceWeight(dto.getPriceWeight());
-        config.setEtaWeight(dto.getEtaWeight());
-
-        scoringConfigRepository.save(config);
-        return getScoringConfig();
     }
 }

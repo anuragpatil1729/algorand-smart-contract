@@ -10,29 +10,31 @@ public class Quote {
     @Id
     private String id;
 
-    @Column(name = "task_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "workflow_id", nullable = false)
+    private Workflow workflow;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "agent_id", nullable = false)
+    private Agent agent;
+
+    @Column(name = "task_id")
     private String taskId;
 
-    @Column(name = "agent_id", nullable = false)
-    private String agentId;
+    @Column(name = "quoted_price", nullable = false)
+    private Double quotedPrice = 0.0;
 
     @Column(nullable = false)
-    private Double price;
+    private Double confidence = 95.0;
 
-    @Column(name = "estimated_time_seconds", nullable = false)
-    private Integer estimatedTimeSeconds;
+    @Column(name = "estimated_time", nullable = false)
+    private Integer estimatedTime = 10;
 
-    @Column(nullable = false)
-    private Double confidence;
-
-    @Column(name = "success_rate", nullable = false)
-    private Double successRate;
+    @Column(name = "reputation_score", nullable = false)
+    private Double reputationScore = 4.8;
 
     @Column(nullable = false)
-    private Double rating;
-
-    @Column(nullable = false)
-    private Double score;
+    private Double score = 0.0;
 
     private Boolean selected = false;
 
@@ -41,16 +43,16 @@ public class Quote {
 
     public Quote() {}
 
-    public Quote(String id, String taskId, String agentId, Double price, Integer estimatedTimeSeconds, Double confidence, Double successRate, Double rating, Double score, Boolean selected, LocalDateTime createdAt) {
+    public Quote(String id, Workflow workflow, Agent agent, String taskId, Double quotedPrice, Double confidence, Integer estimatedTime, Double reputationScore, Double score, Boolean selected, LocalDateTime createdAt) {
         this.id = id;
+        this.workflow = workflow;
+        this.agent = agent;
         this.taskId = taskId;
-        this.agentId = agentId;
-        this.price = price;
-        this.estimatedTimeSeconds = estimatedTimeSeconds;
-        this.confidence = confidence;
-        this.successRate = successRate;
-        this.rating = rating;
-        this.score = score;
+        this.quotedPrice = quotedPrice != null ? quotedPrice : 0.0;
+        this.confidence = confidence != null ? confidence : 95.0;
+        this.estimatedTime = estimatedTime != null ? estimatedTime : 10;
+        this.reputationScore = reputationScore != null ? reputationScore : 4.8;
+        this.score = score != null ? score : 0.0;
         this.selected = selected != null ? selected : false;
         this.createdAt = createdAt;
     }
@@ -64,50 +66,93 @@ public class Quote {
 
     public static class Builder {
         private String id;
+        private Workflow workflow;
+        private Agent agent;
         private String taskId;
-        private String agentId;
-        private Double price;
-        private Integer estimatedTimeSeconds;
-        private Double confidence;
-        private Double successRate;
-        private Double rating;
-        private Double score;
+        private Double quotedPrice = 0.0;
+        private Double confidence = 95.0;
+        private Integer estimatedTime = 10;
+        private Double reputationScore = 4.8;
+        private Double score = 0.0;
         private Boolean selected = false;
         private LocalDateTime createdAt;
 
         public Builder id(String id) { this.id = id; return this; }
+        public Builder workflow(Workflow workflow) { this.workflow = workflow; return this; }
+        public Builder workflowId(String workflowId) {
+            if (workflowId != null) this.workflow = Workflow.builder().id(workflowId).build();
+            return this;
+        }
+
+        public Builder agent(Agent agent) { this.agent = agent; return this; }
+        public Builder agentId(String agentId) {
+            if (agentId != null) this.agent = Agent.builder().id(agentId).build();
+            return this;
+        }
+
         public Builder taskId(String taskId) { this.taskId = taskId; return this; }
-        public Builder agentId(String agentId) { this.agentId = agentId; return this; }
-        public Builder price(Double price) { this.price = price; return this; }
-        public Builder estimatedTimeSeconds(Integer estimatedTimeSeconds) { this.estimatedTimeSeconds = estimatedTimeSeconds; return this; }
+        public Builder quotedPrice(Double quotedPrice) { this.quotedPrice = quotedPrice; return this; }
+        public Builder price(Double price) { this.quotedPrice = price; return this; }
         public Builder confidence(Double confidence) { this.confidence = confidence; return this; }
-        public Builder successRate(Double successRate) { this.successRate = successRate; return this; }
-        public Builder rating(Double rating) { this.rating = rating; return this; }
+        public Builder estimatedTime(Integer estimatedTime) { this.estimatedTime = estimatedTime; return this; }
+        public Builder estimatedTimeSeconds(Integer seconds) { this.estimatedTime = seconds; return this; }
+        public Builder reputationScore(Double reputationScore) { this.reputationScore = reputationScore; return this; }
+        public Builder rating(Double rating) {
+            if (rating != null) this.reputationScore = rating;
+            return this;
+        }
+        public Builder successRate(Double successRate) { return this; }
         public Builder score(Double score) { this.score = score; return this; }
         public Builder selected(Boolean selected) { this.selected = selected; return this; }
         public Builder createdAt(LocalDateTime createdAt) { this.createdAt = createdAt; return this; }
 
         public Quote build() {
-            return new Quote(id, taskId, agentId, price, estimatedTimeSeconds, confidence, successRate, rating, score, selected, createdAt);
+            return new Quote(id, workflow, agent, taskId, quotedPrice, confidence, estimatedTime, reputationScore, score, selected, createdAt);
         }
     }
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
+    public Workflow getWorkflow() { return workflow; }
+    public void setWorkflow(Workflow workflow) { this.workflow = workflow; }
+
+    public String getWorkflowId() { return workflow != null ? workflow.getId() : null; }
+    public void setWorkflowId(String workflowId) {
+        if (workflowId != null) this.workflow = Workflow.builder().id(workflowId).build();
+    }
+
+    public Agent getAgent() { return agent; }
+    public void setAgent(Agent agent) { this.agent = agent; }
+
+    public String getAgentId() { return agent != null ? agent.getId() : null; }
+    public void setAgentId(String agentId) {
+        if (agentId != null) this.agent = Agent.builder().id(agentId).build();
+    }
+
     public String getTaskId() { return taskId; }
     public void setTaskId(String taskId) { this.taskId = taskId; }
-    public String getAgentId() { return agentId; }
-    public void setAgentId(String agentId) { this.agentId = agentId; }
-    public Double getPrice() { return price; }
-    public void setPrice(Double price) { this.price = price; }
-    public Integer getEstimatedTimeSeconds() { return estimatedTimeSeconds; }
-    public void setEstimatedTimeSeconds(Integer estimatedTimeSeconds) { this.estimatedTimeSeconds = estimatedTimeSeconds; }
+    public Double getQuotedPrice() { return quotedPrice; }
+    public void setQuotedPrice(Double quotedPrice) { this.quotedPrice = quotedPrice; }
+
+    public Double getPrice() { return quotedPrice; }
+    public void setPrice(Double price) { this.quotedPrice = price; }
+
     public Double getConfidence() { return confidence; }
     public void setConfidence(Double confidence) { this.confidence = confidence; }
-    public Double getSuccessRate() { return successRate; }
-    public void setSuccessRate(Double successRate) { this.successRate = successRate; }
-    public Double getRating() { return rating; }
-    public void setRating(Double rating) { this.rating = rating; }
+    public Integer getEstimatedTime() { return estimatedTime; }
+    public void setEstimatedTime(Integer estimatedTime) { this.estimatedTime = estimatedTime; }
+
+    public Integer getEstimatedTimeSeconds() { return estimatedTime; }
+    public void setEstimatedTimeSeconds(Integer estimatedTimeSeconds) { this.estimatedTime = estimatedTimeSeconds; }
+
+    public Double getReputationScore() { return reputationScore; }
+    public void setReputationScore(Double reputationScore) { this.reputationScore = reputationScore; }
+
+    public Double getRating() { return reputationScore; }
+    public void setRating(Double rating) { this.reputationScore = rating; }
+
+    public Double getSuccessRate() { return 95.0; }
+
     public Double getScore() { return score; }
     public void setScore(Double score) { this.score = score; }
     public Boolean getSelected() { return selected; }

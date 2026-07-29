@@ -6,6 +6,7 @@ import com.agentmesh.router.model.Agent;
 import com.agentmesh.router.model.Quote;
 import com.agentmesh.router.model.ScoringConfig;
 import com.agentmesh.router.model.Task;
+import com.agentmesh.router.model.enums.HealthStatus;
 import com.agentmesh.router.planner.scoring.ScoringEngine;
 import com.agentmesh.router.repository.AgentRepository;
 import com.agentmesh.router.repository.QuoteRepository;
@@ -66,7 +67,7 @@ public class AgentDiscoveryService {
         rawQuotes.sort(Comparator.comparingDouble(Quote::getScore).reversed());
         if (!rawQuotes.isEmpty()) {
             rawQuotes.get(0).setSelected(true);
-            task.setAssignedAgent(rawQuotes.get(0).getAgentId());
+            task.setAssignedAgent(rawQuotes.get(0).getAgent());
             task.setPrice(rawQuotes.get(0).getPrice());
         }
 
@@ -82,13 +83,13 @@ public class AgentDiscoveryService {
             if (res != null) {
                 return Quote.builder()
                         .id(UUID.randomUUID().toString())
+                        .workflow(task.getWorkflow())
                         .taskId(task.getId())
-                        .agentId(agent.getId())
-                        .price(res.getPrice())
-                        .estimatedTimeSeconds(res.getEstimatedTime())
+                        .agent(agent)
+                        .quotedPrice(res.getPrice())
+                        .estimatedTime(res.getEstimatedTime())
                         .confidence(res.getConfidence())
-                        .successRate(res.getSuccessRate())
-                        .rating(res.getRating())
+                        .reputationScore(res.getRating() != null ? res.getRating() : 4.5)
                         .score(0.0)
                         .selected(false)
                         .build();
@@ -103,20 +104,21 @@ public class AgentDiscoveryService {
 
         return Quote.builder()
                 .id(UUID.randomUUID().toString())
+                .workflow(task.getWorkflow())
                 .taskId(task.getId())
-                .agentId(agent.getId())
-                .price(price)
-                .estimatedTimeSeconds(eta)
+                .agent(agent)
+                .quotedPrice(price)
+                .estimatedTime(eta)
                 .confidence(Math.round((94.0 + Math.random() * 5.0) * 10.0) / 10.0)
-                .successRate(agent.getSuccessRate())
-                .rating(agent.getRating())
+                .reputationScore(agent.getRating())
                 .score(0.0)
                 .selected(false)
                 .build();
     }
 
     private boolean agentMatchesTask(Agent agent, String taskType) {
-        String caps = agent.getSupportedCapabilities().toUpperCase();
+        if (agent == null || agent.getCapabilities() == null || taskType == null) return false;
+        String caps = agent.getCapabilities().toUpperCase();
         String type = taskType.toUpperCase();
         if (type.contains("RESEARCH") && caps.contains("RESEARCH")) return true;
         if ((type.contains("FRONTEND") || type.contains("BACKEND") || type.contains("CODE")) && caps.contains("DEVELOPMENT")) return true;
@@ -136,9 +138,9 @@ public class AgentDiscoveryService {
                             .walletAddress("D64EJWVXUFY3SRUNHXL6XZHPMHXVQFBOFX723TVNAINBGG6MJLWWZOHKPQ")
                             .rating(4.9)
                             .successRate(98.5)
-                            .healthStatus("UP")
+                            .healthStatus(HealthStatus.UP)
                             .basePrice(45.0)
-                            .supportedCapabilities("RESEARCH,MARKET_ANALYSIS,COMPETITOR_RESEARCH,SUMMARY")
+                            .capabilities("RESEARCH,MARKET_ANALYSIS,COMPETITOR_RESEARCH,SUMMARY")
                             .build(),
                     Agent.builder()
                             .id("agent-code-02")
@@ -147,9 +149,9 @@ public class AgentDiscoveryService {
                             .walletAddress("XU4URLGPIYXCXPXYHBTHGLWPLEZOP2F3D7OM2VSRTWK4QEKTKRF6T74KJI")
                             .rating(4.8)
                             .successRate(96.0)
-                            .healthStatus("UP")
+                            .healthStatus(HealthStatus.UP)
                             .basePrice(80.0)
-                            .supportedCapabilities("FRONTEND,BACKEND,DEVELOPMENT,REACT,SPRING_BOOT,API_DESIGN")
+                            .capabilities("FRONTEND,BACKEND,DEVELOPMENT,REACT,SPRING_BOOT,API_DESIGN")
                             .build(),
                     Agent.builder()
                             .id("agent-image-03")
@@ -158,9 +160,9 @@ public class AgentDiscoveryService {
                             .walletAddress("KVYGHYDZ4GGDUD4KZ555XRUGG7GHBJQT3FWCNHE47E2PCDSUY54XOIHZ2U")
                             .rating(4.95)
                             .successRate(99.0)
-                            .healthStatus("UP")
+                            .healthStatus(HealthStatus.UP)
                             .basePrice(60.0)
-                            .supportedCapabilities("LOGO_DESIGN,BRANDING,UI_UX,GRAPHICS,SVG_GENERATION")
+                            .capabilities("LOGO_DESIGN,BRANDING,UI_UX,GRAPHICS,SVG_GENERATION")
                             .build(),
                     Agent.builder()
                             .id("agent-ppt-04")
@@ -169,9 +171,9 @@ public class AgentDiscoveryService {
                             .walletAddress("5BJXBTQPXI6MAPHJF2YHTPABUAEM5ZDGEZWSBN5OQXQWQ67HVW47OUIUOU")
                             .rating(4.75)
                             .successRate(94.5)
-                            .healthStatus("UP")
+                            .healthStatus(HealthStatus.UP)
                             .basePrice(55.0)
-                            .supportedCapabilities("PRESENTATION,PITCH_DECK,BUSINESS_PLAN,SLIDE_GENERATION")
+                            .capabilities("PRESENTATION,PITCH_DECK,BUSINESS_PLAN,SLIDE_GENERATION")
                             .build(),
                     Agent.builder()
                             .id("agent-testing-05")
@@ -180,9 +182,9 @@ public class AgentDiscoveryService {
                             .walletAddress("MB3R5YONVGOARERGS2O2FAQ5MXRIZOKPFCGALD5DP7BJWFSKO3ZDUBLNRQ")
                             .rating(4.85)
                             .successRate(97.2)
-                            .healthStatus("UP")
+                            .healthStatus(HealthStatus.UP)
                             .basePrice(35.0)
-                            .supportedCapabilities("TESTING,QA,CODE_AUDIT,SECURITY_CHECK,VALIDATION")
+                            .capabilities("TESTING,QA,CODE_AUDIT,SECURITY_CHECK,VALIDATION")
                             .build()
             );
             agentRepository.saveAll(defaultAgents);
