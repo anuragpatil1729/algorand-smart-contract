@@ -1,0 +1,8 @@
+{
+  "python.defaultInterpreterPath": "/opt/homebrew/bin/python3",
+  "python.analysis.extraPaths": [
+    "/opt/homebrew/lib/python3.14/site-packages",
+    "/opt/anaconda3/lib/python3.13/site-packages",
+    "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages"
+  ]
+}

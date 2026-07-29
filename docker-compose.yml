@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: agentmesh-postgres
+    environment:
+      POSTGRES_DB: agentmeshdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./database/schema/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - ./database/seeds/agents_seed.sql:/docker-entrypoint-initdb.d/02_seeds.sql
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: agentmesh-redis
+    ports:
+      - "6379:6379"
+
+  router-service:
+    build:
+      context: ./router-service
+      dockerfile: Dockerfile
+    container_name: agentmesh-router
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/agentmeshdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgrespassword
+      SPRING_REDIS_HOST: redis
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  research-agent:
+    build:
+      context: ./agents/research-agent
+    container_name: agent-research-01
+    ports:
+      - "8001:8001"
+    environment:
+      PORT: 8001
+
+  coding-agent:
+    build:
+      context: ./agents/coding-agent
+    container_name: agent-code-02
+    ports:
+      - "8002:8002"
+    environment:
+      PORT: 8002
+
+  image-agent:
+    build:
+      context: ./agents/image-agent
+    container_name: agent-image-03
+    ports:
+      - "8003:8003"
+    environment:
+      PORT: 8003
+
+  ppt-agent:
+    build:
+      context: ./agents/ppt-agent
+    container_name: agent-ppt-04
+    ports:
+      - "8004:8004"
+    environment:
+      PORT: 8004
+
+  testing-agent:
+    build:
+      context: ./agents/testing-agent
+    container_name: agent-testing-05
+    ports:
+      - "8005:8005"
+    environment:
+      PORT: 8005
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: agentmesh-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - router-service
+
+volumes:
+  pgdata:
