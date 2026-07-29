@@ -113,67 +113,74 @@ export interface ExecutionLog {
   timestamp: string;
 }
 
+const unwrap = <T>(response: any): T => {
+  if (response && typeof response === 'object' && 'data' in response && response.data !== undefined && ('success' in response || 'message' in response)) {
+    return response.data;
+  }
+  return response;
+};
+
 // API methods
 export const api = {
   createWorkflow: async (prompt: string): Promise<WorkflowResponse> => {
     const res = await axios.post(`${API_BASE}/workflows`, { prompt });
-    return res.data;
+    return unwrap<WorkflowResponse>(res.data);
   },
 
   getWorkflow: async (id: string): Promise<WorkflowResponse> => {
     const res = await axios.get(`${API_BASE}/workflows/${id}`);
-    return res.data;
+    return unwrap<WorkflowResponse>(res.data);
   },
 
   listWorkflows: async (): Promise<WorkflowResponse[]> => {
     const res = await axios.get(`${API_BASE}/workflows`);
-    return res.data;
+    return unwrap<WorkflowResponse[]>(res.data);
   },
 
   approveWorkflow: async (id: string): Promise<WorkflowResponse> => {
     const res = await axios.post(`${API_BASE}/workflows/${id}/approve`);
-    return res.data;
+    return unwrap<WorkflowResponse>(res.data);
   },
 
   executeWorkflow: async (id: string): Promise<WorkflowResponse> => {
     const res = await axios.post(`${API_BASE}/workflows/${id}/execute`);
-    return res.data;
+    return unwrap<WorkflowResponse>(res.data);
   },
 
   getAgents: async (capability?: string): Promise<AgentDto[]> => {
     const params = capability ? { capability } : {};
     const res = await axios.get(`${API_BASE}/agents`, { params });
-    return res.data;
+    return unwrap<AgentDto[]>(res.data);
   },
 
   registerAgent: async (agent: Partial<AgentDto>): Promise<AgentDto> => {
-    const res = await axios.post(`${API_BASE}/agents/register`, agent);
-    return res.data;
+    const res = await axios.post(`${API_BASE}/agents`, agent);
+    return unwrap<AgentDto>(res.data);
   },
 
   getPaymentDetails: async (workflowId: string): Promise<PaymentDetailsDto> => {
-    const res = await axios.get(`${API_BASE}/payments/${workflowId}`);
-    return res.data;
+    const res = await axios.get(`${API_BASE}/payments/workflow/${workflowId}`);
+    return unwrap<PaymentDetailsDto>(res.data);
   },
 
   getAnalytics: async (): Promise<AnalyticsSummary> => {
     const res = await axios.get(`${API_BASE}/analytics`);
-    return res.data;
+    return unwrap<AnalyticsSummary>(res.data);
   },
 
   getLogs: async (workflowId?: string): Promise<ExecutionLog[]> => {
     const params = workflowId ? { workflowId } : {};
     const res = await axios.get(`${API_BASE}/admin/logs`, { params });
-    return res.data;
+    return unwrap<ExecutionLog[]>(res.data);
   },
 
   getScoringConfig: async (): Promise<ScoringConfig> => {
-    const res = await axios.get(`${API_BASE}/admin/scoring-config`);
-    return res.data;
+    const res = await axios.get(`${API_BASE}/admin/config/scoring`);
+    return unwrap<ScoringConfig>(res.data);
   },
 
   updateScoringConfig: async (config: ScoringConfig): Promise<ScoringConfig> => {
-    const res = await axios.post(`${API_BASE}/admin/scoring-config`, config);
-    return res.data;
+    const res = await axios.put(`${API_BASE}/admin/config/scoring`, config);
+    return unwrap<ScoringConfig>(res.data);
   }
 };

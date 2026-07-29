@@ -121,7 +121,7 @@ export const PlannerPage: React.FC = () => {
             </h3>
 
             <div className="space-y-3">
-              {workflow.tasks.map((task, idx) => {
+              {(workflow.tasks || []).map((task, idx) => {
                 const winnerQuote = task.quotes?.find(q => q.selected) || task.quotes?.[0];
                 return (
                   <div key={task.id} className="p-5 rounded-2xl glass-panel border border-slate-800 space-y-4">

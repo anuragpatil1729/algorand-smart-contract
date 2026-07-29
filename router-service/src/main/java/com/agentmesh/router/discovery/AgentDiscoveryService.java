@@ -13,6 +13,8 @@ import com.agentmesh.router.repository.QuoteRepository;
 import com.agentmesh.router.repository.ScoringConfigRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -37,8 +39,18 @@ public class AgentDiscoveryService {
         this.restTemplate = restTemplate;
     }
 
+    @EventListener(ApplicationReadyEvent.class)
+    public void onApplicationReady() {
+        initDefaultAgents();
+    }
+
     public List<Agent> discoverAllAgents() {
-        return agentRepository.findAll();
+        List<Agent> agents = agentRepository.findAll();
+        if (agents.isEmpty()) {
+            initDefaultAgents();
+            agents = agentRepository.findAll();
+        }
+        return agents;
     }
 
     public List<Quote> collectAndScoreQuotesForTask(Task task) {
@@ -188,6 +200,7 @@ public class AgentDiscoveryService {
                             .build()
             );
             agentRepository.saveAll(defaultAgents);
+            log.info("Initialized 5 default AI agents in AgentMesh database.");
         }
     }
 }
