@@ -1,0 +1,36 @@
+agent:
+  id: agent-testing-05
+  name: Automated QA & Security Agent
+  port: 8005
+  host: 0.0.0.0
+  version: 1.0.0
+  wallet: ""
+  reputation: 4.85
+  capabilities:
+    - TESTING
+    - QA
+    - CODE_AUDIT
+    - SECURITY_CHECK
+    - VALIDATION
+  taskTypes:
+    - Automated Unit Testing
+    - Security Vulnerability Audit
+    - Algorand Contract Verification
+    - Performance Benchmark Test
+    - Integration Test Suite
+  maxConcurrency: 5
+  basePrice: 35.0
+  baseExecutionTime: 8.0
+
+pricing:
+  basePrice: 35.0
+  complexity_multipliers:
+    LOW: 0.85
+    MEDIUM: 1.0
+    HIGH: 1.25
+    CRITICAL: 1.8
+  priority_multipliers:
+    LOW: 0.9
+    MEDIUM: 1.0
+    HIGH: 1.3
+    CRITICAL: 1.8

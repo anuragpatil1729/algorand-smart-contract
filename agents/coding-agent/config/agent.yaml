@@ -1,0 +1,38 @@
+agent:
+  id: agent-code-02
+  name: Full-Stack Coding & Architecture Agent
+  port: 8002
+  host: 0.0.0.0
+  version: 1.0.0
+  wallet: ""
+  reputation: 4.8
+  capabilities:
+    - CODING
+    - FRONTEND
+    - BACKEND
+    - REACT
+    - SPRING_BOOT
+    - DEVELOPMENT
+    - API_DESIGN
+  taskTypes:
+    - Frontend Component
+    - Backend API
+    - Database Schema
+    - Full-Stack Feature
+    - Code Refactoring
+  maxConcurrency: 5
+  basePrice: 80.0
+  baseExecutionTime: 18.0
+
+pricing:
+  basePrice: 80.0
+  complexity_multipliers:
+    LOW: 0.75
+    MEDIUM: 1.0
+    HIGH: 1.5
+    CRITICAL: 2.0
+  priority_multipliers:
+    LOW: 0.9
+    MEDIUM: 1.0
+    HIGH: 1.3
+    CRITICAL: 1.8

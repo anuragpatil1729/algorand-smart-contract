@@ -11,6 +11,7 @@ import com.agentmesh.router.planner.scoring.ScoringEngine;
 import com.agentmesh.router.repository.AgentRepository;
 import com.agentmesh.router.repository.QuoteRepository;
 import com.agentmesh.router.repository.ScoringConfigRepository;
+import com.agentmesh.router.service.RankingEngine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class AgentDiscoveryService {
@@ -29,13 +31,22 @@ public class AgentDiscoveryService {
     private final QuoteRepository quoteRepository;
     private final ScoringConfigRepository scoringConfigRepository;
     private final ScoringEngine scoringEngine;
+    private final RankingEngine rankingEngine;
     private final RestTemplate restTemplate;
 
-    public AgentDiscoveryService(AgentRepository agentRepository, QuoteRepository quoteRepository, ScoringConfigRepository scoringConfigRepository, ScoringEngine scoringEngine, RestTemplate restTemplate) {
+    public AgentDiscoveryService(
+            AgentRepository agentRepository,
+            QuoteRepository quoteRepository,
+            ScoringConfigRepository scoringConfigRepository,
+            ScoringEngine scoringEngine,
+            RankingEngine rankingEngine,
+            RestTemplate restTemplate
+    ) {
         this.agentRepository = agentRepository;
         this.quoteRepository = quoteRepository;
         this.scoringConfigRepository = scoringConfigRepository;
         this.scoringEngine = scoringEngine;
+        this.rankingEngine = rankingEngine;
         this.restTemplate = restTemplate;
     }
 
@@ -53,12 +64,61 @@ public class AgentDiscoveryService {
         return agents;
     }
 
+    public List<Agent> findAgentsByCapability(String capability) {
+        List<Agent> agents = discoverAllAgents();
+        if (capability == null || capability.isBlank()) return getRankedAgents(agents);
+
+        String capUpper = capability.toUpperCase();
+        List<Agent> matching = agents.stream()
+                .filter(a -> agentMatchesCapability(a, capUpper))
+                .collect(Collectors.toList());
+
+        return getRankedAgents(matching);
+    }
+
+    public List<Agent> findHealthiestAgents() {
+        List<Agent> agents = discoverAllAgents();
+        return agents.stream()
+                .sorted(Comparator.comparing(Agent::getHealthScore, Comparator.nullsLast(Comparator.reverseOrder())))
+                .collect(Collectors.toList());
+    }
+
+    public List<Agent> findCheapestAgents() {
+        List<Agent> agents = discoverAllAgents();
+        return agents.stream()
+                .sorted(Comparator.comparing(Agent::getBasePrice, Comparator.nullsLast(Comparator.naturalOrder())))
+                .collect(Collectors.toList());
+    }
+
+    public List<Agent> findLeastLoadedAgents() {
+        List<Agent> agents = discoverAllAgents();
+        return agents.stream()
+                .sorted(Comparator.comparing(Agent::getCurrentLoad, Comparator.nullsLast(Comparator.naturalOrder())))
+                .collect(Collectors.toList());
+    }
+
+    public List<Agent> findHighestRatedAgents() {
+        List<Agent> agents = discoverAllAgents();
+        return agents.stream()
+                .sorted(Comparator.comparing(Agent::getRating, Comparator.nullsLast(Comparator.reverseOrder())))
+                .collect(Collectors.toList());
+    }
+
+    public List<Agent> findAvailableAgents() {
+        return discoverAllAgents().stream()
+                .filter(a -> a.getHealthStatusEnum() == HealthStatus.ONLINE || a.getHealthStatusEnum() == HealthStatus.UP)
+                .collect(Collectors.toList());
+    }
+
+    public List<Agent> getRankedAgents(List<Agent> pool) {
+        if (pool == null || pool.isEmpty()) return Collections.emptyList();
+        List<Agent> list = new ArrayList<>(pool);
+        list.sort((a, b) -> Double.compare(rankingEngine.calculateScore(b, pool), rankingEngine.calculateScore(a, pool)));
+        return list;
+    }
+
     public List<Quote> collectAndScoreQuotesForTask(Task task) {
-        List<Agent> agents = agentRepository.findAll();
-        if (agents.isEmpty()) {
-            initDefaultAgents();
-            agents = agentRepository.findAll();
-        }
+        List<Agent> agents = discoverAllAgents();
 
         List<Quote> rawQuotes = new ArrayList<>();
         ScoringConfig scoringConfig = scoringConfigRepository.findById("DEFAULT")
@@ -128,13 +188,18 @@ public class AgentDiscoveryService {
                 .build();
     }
 
+    private boolean agentMatchesCapability(Agent agent, String capUpper) {
+        if (agent == null || agent.getCapabilities() == null) return false;
+        return agent.getCapabilities().toUpperCase().contains(capUpper);
+    }
+
     private boolean agentMatchesTask(Agent agent, String taskType) {
         if (agent == null || agent.getCapabilities() == null || taskType == null) return false;
         String caps = agent.getCapabilities().toUpperCase();
         String type = taskType.toUpperCase();
         if (type.contains("RESEARCH") && caps.contains("RESEARCH")) return true;
-        if ((type.contains("FRONTEND") || type.contains("BACKEND") || type.contains("CODE")) && caps.contains("DEVELOPMENT")) return true;
-        if ((type.contains("LOGO") || type.contains("DESIGN") || type.contains("GRAPHICS")) && caps.contains("LOGO_DESIGN")) return true;
+        if ((type.contains("FRONTEND") || type.contains("BACKEND") || type.contains("CODE")) && (caps.contains("DEVELOPMENT") || caps.contains("CODING"))) return true;
+        if ((type.contains("LOGO") || type.contains("DESIGN") || type.contains("GRAPHICS")) && (caps.contains("LOGO_DESIGN") || caps.contains("IMAGE"))) return true;
         if ((type.contains("PITCH") || type.contains("PRESENTATION") || type.contains("DECK")) && caps.contains("PRESENTATION")) return true;
         if ((type.contains("TESTING") || type.contains("QA") || type.contains("AUDIT")) && caps.contains("TESTING")) return true;
         return caps.contains(type);
@@ -150,7 +215,8 @@ public class AgentDiscoveryService {
                             .walletAddress("D64EJWVXUFY3SRUNHXL6XZHPMHXVQFBOFX723TVNAINBGG6MJLWWZOHKPQ")
                             .rating(4.9)
                             .successRate(98.5)
-                            .healthStatus(HealthStatus.UP)
+                            .healthStatus(HealthStatus.ONLINE)
+                            .healthScore(100.0)
                             .basePrice(45.0)
                             .capabilities("RESEARCH,MARKET_ANALYSIS,COMPETITOR_RESEARCH,SUMMARY")
                             .build(),
@@ -161,9 +227,10 @@ public class AgentDiscoveryService {
                             .walletAddress("XU4URLGPIYXCXPXYHBTHGLWPLEZOP2F3D7OM2VSRTWK4QEKTKRF6T74KJI")
                             .rating(4.8)
                             .successRate(96.0)
-                            .healthStatus(HealthStatus.UP)
+                            .healthStatus(HealthStatus.ONLINE)
+                            .healthScore(100.0)
                             .basePrice(80.0)
-                            .capabilities("FRONTEND,BACKEND,DEVELOPMENT,REACT,SPRING_BOOT,API_DESIGN")
+                            .capabilities("FRONTEND,BACKEND,DEVELOPMENT,REACT,SPRING_BOOT,API_DESIGN,CODING")
                             .build(),
                     Agent.builder()
                             .id("agent-image-03")
@@ -172,9 +239,10 @@ public class AgentDiscoveryService {
                             .walletAddress("KVYGHYDZ4GGDUD4KZ555XRUGG7GHBJQT3FWCNHE47E2PCDSUY54XOIHZ2U")
                             .rating(4.95)
                             .successRate(99.0)
-                            .healthStatus(HealthStatus.UP)
+                            .healthStatus(HealthStatus.ONLINE)
+                            .healthScore(100.0)
                             .basePrice(60.0)
-                            .capabilities("LOGO_DESIGN,BRANDING,UI_UX,GRAPHICS,SVG_GENERATION")
+                            .capabilities("LOGO_DESIGN,BRANDING,UI_UX,GRAPHICS,SVG_GENERATION,IMAGE")
                             .build(),
                     Agent.builder()
                             .id("agent-ppt-04")
@@ -183,7 +251,8 @@ public class AgentDiscoveryService {
                             .walletAddress("5BJXBTQPXI6MAPHJF2YHTPABUAEM5ZDGEZWSBN5OQXQWQ67HVW47OUIUOU")
                             .rating(4.75)
                             .successRate(94.5)
-                            .healthStatus(HealthStatus.UP)
+                            .healthStatus(HealthStatus.ONLINE)
+                            .healthScore(100.0)
                             .basePrice(55.0)
                             .capabilities("PRESENTATION,PITCH_DECK,BUSINESS_PLAN,SLIDE_GENERATION")
                             .build(),
@@ -194,7 +263,8 @@ public class AgentDiscoveryService {
                             .walletAddress("MB3R5YONVGOARERGS2O2FAQ5MXRIZOKPFCGALD5DP7BJWFSKO3ZDUBLNRQ")
                             .rating(4.85)
                             .successRate(97.2)
-                            .healthStatus(HealthStatus.UP)
+                            .healthStatus(HealthStatus.ONLINE)
+                            .healthScore(100.0)
                             .basePrice(35.0)
                             .capabilities("TESTING,QA,CODE_AUDIT,SECURITY_CHECK,VALIDATION")
                             .build()

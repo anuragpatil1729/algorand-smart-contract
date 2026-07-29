@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  coding-agent:
+    build:
+      context: ..
+      dockerfile: coding-agent/Dockerfile
+    container_name: agentmesh-coding-agent
+    ports:
+      - "8002:8002"
+    environment:
+      - PORT=8002
+      - AGENT_NAME=Full-Stack Coding & Architecture Agent
+    restart: unless-stopped

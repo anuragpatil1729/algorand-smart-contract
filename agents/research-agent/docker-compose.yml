@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  research-agent:
+    build:
+      context: ..
+      dockerfile: research-agent/Dockerfile
+    container_name: agentmesh-research-agent
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+      - AGENT_NAME=Research & Market Intelligence Agent
+    restart: unless-stopped

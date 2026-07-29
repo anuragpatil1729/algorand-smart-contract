@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  image-agent:
+    build:
+      context: ..
+      dockerfile: image-agent/Dockerfile
+    container_name: agentmesh-image-agent
+    ports:
+      - "8003:8003"
+    environment:
+      - PORT=8003
+      - AGENT_NAME=Brand & Visual Graphics Agent
+    restart: unless-stopped

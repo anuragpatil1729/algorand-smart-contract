@@ -1,0 +1,32 @@
+agent:
+  id: agent-research-01
+  name: Research & Market Intelligence Agent
+  port: 8001
+  host: 0.0.0.0
+  version: 1.0.0
+  wallet: ""
+  reputation: 4.9
+  capabilities:
+    - RESEARCH
+  taskTypes:
+    - Market Research
+    - Competitor Analysis
+    - Technology Research
+    - Product Research
+    - Startup Validation
+  maxConcurrency: 5
+  basePrice: 45.0
+  baseExecutionTime: 12.0
+
+pricing:
+  basePrice: 45.0
+  complexity_multipliers:
+    LOW: 0.8
+    MEDIUM: 1.0
+    HIGH: 1.4
+    CRITICAL: 2.0
+  priority_multipliers:
+    LOW: 0.9
+    MEDIUM: 1.0
+    HIGH: 1.3
+    CRITICAL: 1.8

@@ -1,0 +1,35 @@
+agent:
+  id: agent-ppt-04
+  name: Pitch Deck & Strategy Agent
+  port: 8004
+  host: 0.0.0.0
+  version: 1.0.0
+  wallet: ""
+  reputation: 4.75
+  capabilities:
+    - PRESENTATION
+    - PITCH_DECK
+    - BUSINESS_PLAN
+    - SLIDE_GENERATION
+  taskTypes:
+    - Startup Pitch Deck
+    - Executive Summary Presentation
+    - Investor Update Deck
+    - Technical Architecture Presentation
+    - Business Model Canvas
+  maxConcurrency: 5
+  basePrice: 55.0
+  baseExecutionTime: 11.0
+
+pricing:
+  basePrice: 55.0
+  complexity_multipliers:
+    LOW: 0.8
+    MEDIUM: 1.0
+    HIGH: 1.35
+    CRITICAL: 1.8
+  priority_multipliers:
+    LOW: 0.9
+    MEDIUM: 1.0
+    HIGH: 1.3
+    CRITICAL: 1.8

@@ -1,0 +1,4 @@
+com/agentmesh/router/RankingEngineTest.class
+com/agentmesh/router/DiscoveryServiceTest.class
+com/agentmesh/router/HealthMonitorServiceTest.class
+com/agentmesh/router/RegistryServiceTest.class
