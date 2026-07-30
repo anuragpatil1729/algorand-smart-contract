@@ -23,3 +23,9 @@
 /Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/quote/ScoringEngineTest.java
 /Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/quote/SelectionStrategyTest.java
 /Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/quote/TimeoutAndFailureTest.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/x402/AlgorandX402ProviderTest.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/x402/ChallengeTest.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/x402/MockFacilitatorTest.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/x402/PaymentVerificationTest.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/x402/ReceiptTest.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/x402/X402MiddlewareTest.java

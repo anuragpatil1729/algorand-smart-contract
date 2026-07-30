@@ -40,6 +40,16 @@ public class ExecutionController {
         }
 
         WorkflowResult result = workflowExecutor.executeWorkflowSync(request);
+
+        com.agentmesh.router.x402.model.PaymentContext ctx = com.agentmesh.router.x402.model.PaymentContext.getCurrent();
+        if (ctx != null && ctx.getReceipt() != null) {
+            if (result.getValidationReport() == null) {
+                result.setValidationReport(new java.util.HashMap<>());
+            }
+            result.getValidationReport().put("x402Receipt", ctx.getReceipt());
+            result.getValidationReport().put("algorandTransactionId", ctx.getTransactionId());
+        }
+
         return ResponseEntity.ok(ApiResponse.success("Workflow execution finished", result));
     }
 

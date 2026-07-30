@@ -19,6 +19,7 @@ com/agentmesh/router/payment/AlgorandPaymentService.class
 com/agentmesh/router/controller/AdminController.class
 com/agentmesh/router/planner/TaskDependencyResolver.class
 com/agentmesh/router/repository/PaymentRepository.class
+com/agentmesh/router/x402/provider/AlgorandX402Provider.class
 com/agentmesh/router/model/ExecutionLog.class
 com/agentmesh/router/dto/ScoringConfigDto.class
 com/agentmesh/router/planner/WorkflowGraphBuilder.class
@@ -30,6 +31,7 @@ com/agentmesh/router/dto/QuoteResponseDto.class
 com/agentmesh/router/dto/PaymentResponse.class
 com/agentmesh/router/quote/strategy/HighestQualityStrategy.class
 com/agentmesh/router/quote/dto/AgentQuoteRequest.class
+com/agentmesh/router/x402/model/PaymentContext.class
 com/agentmesh/router/execution/dto/ExecutionTaskRequest.class
 com/agentmesh/router/quote/ScoringEngine$Weights.class
 com/agentmesh/router/planner/PlannerEngine.class
@@ -48,6 +50,7 @@ com/agentmesh/router/repository/AgentEventRepository.class
 com/agentmesh/router/quote/strategy/CustomSelectionStrategy.class
 com/agentmesh/router/execution/ExecutionValidator.class
 com/agentmesh/router/controller/PlannerController.class
+com/agentmesh/router/x402/service/X402PaymentMetrics.class
 com/agentmesh/router/exception/GlobalExceptionHandler.class
 com/agentmesh/router/exception/ValidationException.class
 com/agentmesh/router/dto/WorkflowDto.class
@@ -70,8 +73,10 @@ com/agentmesh/router/controller/AnalyticsController.class
 com/agentmesh/router/dto/AgentRegistryDto.class
 com/agentmesh/router/planner/PlanningRulesEngine.class
 com/agentmesh/router/dto/AgentRegistrationDto.class
+com/agentmesh/router/x402/dto/X402PaymentProof.class
 com/agentmesh/router/exception/BusinessException.class
 com/agentmesh/router/controller/RegistryController.class
+com/agentmesh/router/x402/dto/X402Receipt.class
 com/agentmesh/router/quote/QuoteCollector.class
 com/agentmesh/router/dto/mapper/AgentMapper.class
 com/agentmesh/router/service/PaymentService.class
@@ -81,6 +86,7 @@ com/agentmesh/router/model/Payment$Builder.class
 com/agentmesh/router/quote/QuoteAggregator.class
 com/agentmesh/router/dto/AnalyticsDto$TaskTypeMetric.class
 com/agentmesh/router/dto/QuoteRequestDto.class
+com/agentmesh/router/x402/middleware/X402PaymentInterceptor.class
 com/agentmesh/router/planner/TaskValidator.class
 com/agentmesh/router/execution/RetryManager$RetryPolicy.class
 com/agentmesh/router/RouterApplication.class
@@ -96,6 +102,7 @@ com/agentmesh/router/planner/TaskComplexityEstimator.class
 com/agentmesh/router/dto/AgentRequest.class
 com/agentmesh/router/service/RankingEngine.class
 com/agentmesh/router/planner/dto/WorkflowPlanRequestDto.class
+com/agentmesh/router/x402/service/X402SecurityService.class
 com/agentmesh/router/dto/PaymentDetailsDto.class
 com/agentmesh/router/config/AsyncConfig.class
 com/agentmesh/router/execution/dto/ExecutionTaskResponse.class
@@ -106,6 +113,7 @@ com/agentmesh/router/quote/strategy/SelectionStrategy.class
 com/agentmesh/router/quote/QuoteCache.class
 com/agentmesh/router/repository/TransactionRepository.class
 com/agentmesh/router/execution/dto/WorkflowExecutionRequest.class
+com/agentmesh/router/x402/pricing/X402DynamicPricingEngine.class
 com/agentmesh/router/service/PlannerService.class
 com/agentmesh/router/model/Payment.class
 com/agentmesh/router/dto/AgentDto.class
@@ -142,6 +150,7 @@ com/agentmesh/router/repository/QuoteRepository.class
 com/agentmesh/router/repository/AgentRepository.class
 com/agentmesh/router/execution/ExecutionStateMachine$TaskState.class
 com/agentmesh/router/model/Workflow.class
+com/agentmesh/router/x402/service/X402AuditService.class
 com/agentmesh/router/model/Agent$Builder.class
 com/agentmesh/router/quote/dto/AssignmentPlan.class
 com/agentmesh/router/model/ScoringConfig.class
@@ -155,8 +164,11 @@ com/agentmesh/router/config/OpenApiConfig.class
 com/agentmesh/router/execution/WorkflowExecutor.class
 com/agentmesh/router/quote/QuoteResponseParser.class
 com/agentmesh/router/dto/WorkflowRequestDto.class
+com/agentmesh/router/x402/dto/X402Challenge.class
 com/agentmesh/router/repository/ExecutionLogRepository.class
 com/agentmesh/router/execution/RetryManager.class
+com/agentmesh/router/x402/provider/BlockchainPaymentProvider.class
+com/agentmesh/router/config/WebConfig.class
 com/agentmesh/router/dto/PaymentDetailsDto$TransactionDto.class
 com/agentmesh/router/quote/dto/TaskAssignment.class
 com/agentmesh/router/execution/ExecutionEventBus.class

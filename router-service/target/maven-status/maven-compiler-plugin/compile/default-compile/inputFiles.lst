@@ -4,6 +4,7 @@
 /Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/config/DatabaseConfig.java
 /Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/config/OpenApiConfig.java
 /Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/config/RestTemplateConfig.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/config/WebConfig.java
 /Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/config/WebSocketConfig.java
 /Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/controller/AdminController.java
 /Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/controller/AgentController.java
@@ -146,3 +147,14 @@
 /Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/service/WorkflowService.java
 /Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/workflow/WorkflowEngineService.java
 /Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/workflow/aggregator/ResultAggregatorService.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/x402/dto/X402Challenge.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/x402/dto/X402PaymentProof.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/x402/dto/X402Receipt.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/x402/middleware/X402PaymentInterceptor.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/x402/model/PaymentContext.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/x402/pricing/X402DynamicPricingEngine.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/x402/provider/AlgorandX402Provider.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/x402/provider/BlockchainPaymentProvider.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/x402/service/X402AuditService.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/x402/service/X402PaymentMetrics.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/x402/service/X402SecurityService.java
