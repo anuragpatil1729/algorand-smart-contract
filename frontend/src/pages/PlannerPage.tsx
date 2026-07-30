@@ -1,27 +1,21 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import ReactFlow, { 
   Background, 
   Controls, 
   MiniMap, 
   useNodesState, 
-  useEdgesState, 
-  MarkerType 
+  useEdgesState
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { motion } from 'framer-motion';
 import { 
   Sparkles, 
   Play, 
   Sliders, 
   Layers, 
-  DollarSign, 
-  Clock, 
-  ShieldCheck, 
-  Cpu, 
-  CheckCircle2, 
   RefreshCw 
 } from 'lucide-react';
 import { TaskNode } from '../components/TaskNode';
+import { useRunPipelineMutation } from '../hooks/useDataHooks';
 
 const nodeTypes = {
   taskNode: TaskNode,
@@ -31,53 +25,25 @@ export const PlannerPage: React.FC = () => {
   const [prompt, setPrompt] = useState('Create a startup landing page with logo, presentation deck, REST APIs, and automated QA');
   const [strategy, setStrategy] = useState('BALANCED');
   const [maxConcurrency, setMaxConcurrency] = useState(5);
-  const [isExecuting, setIsExecuting] = useState(false);
   const [executionResult, setExecutionResult] = useState<any>(null);
 
-  // Initial demo nodes for visual DAG
-  const initialNodes = [
-    {
-      id: 'task-1',
-      type: 'taskNode',
-      position: { x: 250, y: 30 },
-      data: { label: 'Market & User Domain Research', capability: 'RESEARCH', agentName: 'Research Agent', status: 'COMPLETED', price: 45.0, duration: 10 }
-    },
-    {
-      id: 'task-2',
-      type: 'taskNode',
-      position: { x: 50, y: 180 },
-      data: { label: 'Pitch Deck & Business Architecture', capability: 'PITCH_DECK', agentName: 'PPT Agent', status: 'COMPLETED', price: 60.0, duration: 15 }
-    },
-    {
-      id: 'task-3',
-      type: 'taskNode',
-      position: { x: 450, y: 180 },
-      data: { label: 'Brand Logo & Graphic Design', capability: 'LOGO_DESIGN', agentName: 'Image Agent', status: 'COMPLETED', price: 50.0, duration: 12 }
-    },
-    {
-      id: 'task-4',
-      type: 'taskNode',
-      position: { x: 250, y: 330 },
-      data: { label: 'React UI Code Generation', capability: 'FRONTEND', agentName: 'Coding Agent', status: 'RUNNING', price: 80.0, duration: 25 }
-    },
-    {
-      id: 'task-5',
-      type: 'taskNode',
-      position: { x: 250, y: 480 },
-      data: { label: 'Automated QA & Security Audit', capability: 'TESTING', agentName: 'Testing Agent', status: 'PENDING', price: 30.0, duration: 8 }
-    }
-  ];
+  const runPipelineMutation = useRunPipelineMutation();
 
-  const initialEdges = [
-    { id: 'e1-2', source: 'task-1', target: 'task-2', animated: true, style: { stroke: '#8b5cf6', strokeWidth: 2 } },
-    { id: 'e1-3', source: 'task-1', target: 'task-3', animated: true, style: { stroke: '#8b5cf6', strokeWidth: 2 } },
-    { id: 'e2-4', source: 'task-2', target: 'task-4', animated: true, style: { stroke: '#6366f1', strokeWidth: 2 } },
-    { id: 'e3-4', source: 'task-3', target: 'task-4', animated: true, style: { stroke: '#6366f1', strokeWidth: 2 } },
-    { id: 'e4-5', source: 'task-4', target: 'task-5', animated: true, style: { stroke: '#10b981', strokeWidth: 2 } },
-  ];
+  const [nodes, setNodes, onNodesChange] = useNodesState([
+    { id: 't1', type: 'taskNode', position: { x: 250, y: 30 }, data: { label: 'User & Domain Research', capability: 'RESEARCH', agentName: 'Research Agent', status: 'COMPLETED', price: 45.0 } },
+    { id: 't2', type: 'taskNode', position: { x: 50, y: 180 }, data: { label: 'Pitch Deck & Architecture', capability: 'PITCH_DECK', agentName: 'PPT Agent', status: 'COMPLETED', price: 60.0 } },
+    { id: 't3', type: 'taskNode', position: { x: 450, y: 180 }, data: { label: 'Brand Logo Design', capability: 'LOGO_DESIGN', agentName: 'Image Agent', status: 'COMPLETED', price: 50.0 } },
+    { id: 't4', type: 'taskNode', position: { x: 250, y: 330 }, data: { label: 'React UI Code Generation', capability: 'FRONTEND', agentName: 'Coding Agent', status: 'RUNNING', price: 80.0 } },
+    { id: 't5', type: 'taskNode', position: { x: 250, y: 480 }, data: { label: 'Automated QA Audit', capability: 'TESTING', agentName: 'Testing Agent', status: 'PENDING', price: 30.0 } }
+  ] as any);
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes as any);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges as any);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([
+    { id: 'e1-2', source: 't1', target: 't2', animated: true, style: { stroke: '#8b5cf6', strokeWidth: 2 } },
+    { id: 'e1-3', source: 't1', target: 't3', animated: true, style: { stroke: '#8b5cf6', strokeWidth: 2 } },
+    { id: 'e2-4', source: 't2', target: 't4', animated: true, style: { stroke: '#6366f1', strokeWidth: 2 } },
+    { id: 'e3-4', source: 't3', target: 't4', animated: true, style: { stroke: '#6366f1', strokeWidth: 2 } },
+    { id: 'e4-5', source: 't4', target: 't5', animated: true, style: { stroke: '#10b981', strokeWidth: 2 } }
+  ] as any);
 
   const presets = [
     'Create a startup landing page with logo, presentation deck & QA',
@@ -85,23 +51,48 @@ export const PlannerPage: React.FC = () => {
     'Full-stack React dashboard with authentication and security audit'
   ];
 
-  const handleRunPipeline = async () => {
-    setIsExecuting(true);
-    try {
-      const response = await fetch('http://localhost:8080/api/demo/run', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, strategy, maxConcurrency })
-      });
-      const data = await response.json();
-      if (data.success) {
-        setExecutionResult(data.data);
+  const handleRunPipeline = () => {
+    runPipelineMutation.mutate(
+      { prompt, strategy, maxConcurrency },
+      {
+        onSuccess: (data) => {
+          setExecutionResult(data);
+
+          if (data?.plannerOutput?.taskList) {
+            const dynamicNodes = data.plannerOutput.taskList.map((task: any, idx: number) => ({
+              id: task.id || `task-${idx}`,
+              type: 'taskNode',
+              position: { x: 200 + (idx % 2) * 200, y: 50 + Math.floor(idx / 2) * 150 },
+              data: {
+                label: task.description || task.name || task.id,
+                capability: task.requiredCapability || 'GENERAL',
+                agentName: data.selectedAgents?.find((a: any) => a.taskId === task.id)?.selectedAgentName || 'Assigned Agent',
+                status: 'COMPLETED',
+                price: task.estimatedCost || 50.0
+              }
+            }));
+
+            const dynamicEdges: any[] = [];
+            data.plannerOutput.taskList.forEach((task: any) => {
+              if (task.dependencies) {
+                task.dependencies.forEach((depId: string) => {
+                  dynamicEdges.push({
+                    id: `e-${depId}-${task.id}`,
+                    source: depId,
+                    target: task.id,
+                    animated: true,
+                    style: { stroke: '#8b5cf6', strokeWidth: 2 }
+                  });
+                });
+              }
+            });
+
+            if (dynamicNodes.length > 0) setNodes(dynamicNodes);
+            if (dynamicEdges.length > 0) setEdges(dynamicEdges);
+          }
+        }
       }
-    } catch (e) {
-      console.warn('Demo endpoint run offline fallback demo used');
-    } finally {
-      setIsExecuting(false);
-    }
+    );
   };
 
   return (
@@ -114,7 +105,7 @@ export const PlannerPage: React.FC = () => {
               Workflow Builder & Live DAG
             </h1>
             <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-violet-500 to-indigo-500 text-white font-mono text-xs font-bold shadow-md shadow-violet-500/20">
-              HERO FEATURE
+              DYNAMIC PIPELINE
             </span>
           </div>
           <p className="text-sm text-slate-400 mt-1 font-sans">
@@ -123,7 +114,7 @@ export const PlannerPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Split Layout: Left Controls / Right React Flow Canvas */}
+      {/* Main Split Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left 5 Cols: Input & Configuration Controls */}
         <div className="lg:col-span-5 space-y-6">
@@ -181,10 +172,10 @@ export const PlannerPage: React.FC = () => {
             {/* Execute Button */}
             <button
               onClick={handleRunPipeline}
-              disabled={isExecuting}
+              disabled={runPipelineMutation.isPending}
               className="w-full glass-button py-3.5 flex items-center justify-center space-x-2 text-sm font-bold tracking-wide shadow-violet-600/40"
             >
-              {isExecuting ? (
+              {runPipelineMutation.isPending ? (
                 <>
                   <RefreshCw className="w-4 h-4 text-white animate-spin" />
                   <span>Orchestrating Pipeline...</span>
@@ -211,7 +202,7 @@ export const PlannerPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Right 7 Cols: React Flow Interactive DAG Canvas */}
+        {/* Right 7 Cols: React Flow Canvas */}
         <div className="lg:col-span-7">
           <div className="glass-panel p-4 border-slate-800/80 h-[580px] flex flex-col">
             <div className="flex items-center justify-between mb-3 px-2">
@@ -220,7 +211,7 @@ export const PlannerPage: React.FC = () => {
                 <h3 className="text-sm font-bold text-white">Live Execution DAG Canvas</h3>
               </div>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-violet-500/10 text-violet-300 border border-violet-500/20">
-                REACT FLOW 11.10
+                DYNAMIC CANVAS
               </span>
             </div>
 

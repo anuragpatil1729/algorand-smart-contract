@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { 
   Play, 
@@ -11,43 +11,40 @@ import {
   Activity, 
   ShieldCheck, 
   ArrowUpRight,
-  RefreshCw,
-  Sparkles,
-  Zap
+  Sparkles
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useSystemMetrics, useSystemStatus, usePaymentsHistory, useAgentsList } from '../hooks/useDataHooks';
 
 export const Dashboard: React.FC = () => {
-  const [metrics, setMetrics] = useState({
-    runningWorkflows: 2,
-    completedWorkflows: 48,
-    registeredAgents: 5,
-    revenueUsdc: 245.50,
-    avgExecutionTimeSeconds: 2.8,
-    successRate: 98.2,
-    totalPayments: 50,
-    activeAgents: 5
-  });
+  const { data: metricsData, isLoading: isMetricsLoading } = useSystemMetrics();
+  const { data: statusData } = useSystemStatus();
+  const { data: paymentsData } = usePaymentsHistory();
+  const { data: agentsData } = useAgentsList();
 
-  const [recentWorkflows, setRecentWorkflows] = useState([
-    { id: 'wf-plan-8f12a3', prompt: 'Create startup landing page with logo & QA', status: 'RUNNING', cost: 5.25, time: '1.2s' },
-    { id: 'wf-plan-7c91b4', prompt: 'Python FastAPI research & benchmarking agent', status: 'COMPLETED', cost: 4.50, time: '2.4s' },
-    { id: 'wf-plan-6a50e2', prompt: 'Pitch deck presentation & market architecture', status: 'COMPLETED', cost: 6.00, time: '3.1s' }
-  ]);
+  const execMetrics = metricsData?.executionMetrics || {};
+  const payMetrics = metricsData?.paymentMetrics || {};
 
-  const [recentPayments, setRecentPayments] = useState([
-    { txId: 'TX-ALGO-TEST-998811', amount: '5.25', asset: 'USDC', verified: true, time: '2 mins ago' },
-    { txId: 'TX-ALGO-TEST-887722', amount: '4.50', asset: 'USDC', verified: true, time: '8 mins ago' },
-    { txId: 'TX-ALGO-TEST-776633', amount: '6.00', asset: 'USDC', verified: true, time: '15 mins ago' }
-  ]);
+  const runningWorkflows = execMetrics.activeWorkflowsCount ?? 2;
+  const completedWorkflows = execMetrics.completedWorkflowsCount ?? 48;
+  const registeredAgents = metricsData?.registeredAgentsCount ?? (agentsData?.length || 5);
+  const revenueUsdc = payMetrics.totalRevenueUSDC ?? 245.50;
+  const avgExecDurationSec = ((execMetrics.averageExecutionDurationMs ?? 2850) / 1000).toFixed(1);
+  const successRate = 98.2;
+  const totalPayments = payMetrics.paidRequestsCount ?? 50;
 
-  const [agentsHealth, setAgentsHealth] = useState([
-    { name: 'Research Agent', capability: 'RESEARCH', health: 100, load: '12%', status: 'HEALTHY' },
-    { name: 'Coding Agent', capability: 'FRONTEND', health: 98, load: '24%', status: 'HEALTHY' },
-    { name: 'Image Agent', capability: 'LOGO_DESIGN', health: 100, load: '8%', status: 'HEALTHY' },
-    { name: 'PPT Agent', capability: 'PITCH_DECK', health: 95, load: '15%', status: 'HEALTHY' },
-    { name: 'Testing Agent', capability: 'TESTING', health: 100, load: '5%', status: 'HEALTHY' }
-  ]);
+  const recentPayments = paymentsData && paymentsData.length > 0 ? paymentsData.slice(0, 3) : [
+    { algorandTransactionId: 'TX-ALGO-TEST-998811', amount: '5.25', asset: 'USDC', verified: true, settlementTimestamp: Date.now() - 120000 },
+    { algorandTransactionId: 'TX-ALGO-TEST-887722', amount: '4.50', asset: 'USDC', verified: true, settlementTimestamp: Date.now() - 600000 }
+  ];
+
+  const agentsList = agentsData && agentsData.length > 0 ? agentsData : [
+    { name: 'Research Agent', capability: 'RESEARCH', status: 'HEALTHY', currentLoad: '12%' },
+    { name: 'Coding Agent', capability: 'FRONTEND', status: 'HEALTHY', currentLoad: '24%' },
+    { name: 'Image Agent', capability: 'LOGO_DESIGN', status: 'HEALTHY', currentLoad: '8%' },
+    { name: 'PPT Agent', capability: 'PITCH_DECK', status: 'HEALTHY', currentLoad: '15%' },
+    { name: 'Testing Agent', capability: 'TESTING', status: 'HEALTHY', currentLoad: '5%' }
+  ];
 
   return (
     <div className="space-y-8 pb-12">
@@ -81,14 +78,14 @@ export const Dashboard: React.FC = () => {
       {/* Top 8 Metric Cards Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Running Workflows', value: metrics.runningWorkflows, icon: Play, color: 'text-violet-400', bg: 'bg-violet-500/10', border: 'border-violet-500/20' },
-          { label: 'Completed Workflows', value: metrics.completedWorkflows, icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
-          { label: 'Registered Agents', value: metrics.registeredAgents, icon: Cpu, color: 'text-indigo-400', bg: 'bg-indigo-500/10', border: 'border-indigo-500/20' },
-          { label: 'Total Revenue (USDC)', value: `$${metrics.revenueUsdc.toFixed(2)}`, icon: DollarSign, color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20' },
-          { label: 'Avg Execution Time', value: `${metrics.avgExecutionTimeSeconds}s`, icon: Clock, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
-          { label: 'Success Rate', value: `${metrics.successRate}%`, icon: TrendingUp, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
-          { label: 'Total Payments', value: metrics.totalPayments, icon: CreditCard, color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
-          { label: 'Active Agents', value: metrics.activeAgents, icon: Activity, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' }
+          { label: 'Running Workflows', value: runningWorkflows, icon: Play, color: 'text-violet-400', bg: 'bg-violet-500/10', border: 'border-violet-500/20' },
+          { label: 'Completed Workflows', value: completedWorkflows, icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+          { label: 'Registered Agents', value: registeredAgents, icon: Cpu, color: 'text-indigo-400', bg: 'bg-indigo-500/10', border: 'border-indigo-500/20' },
+          { label: 'Total Revenue (USDC)', value: `$${typeof revenueUsdc === 'number' ? revenueUsdc.toFixed(2) : revenueUsdc}`, icon: DollarSign, color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20' },
+          { label: 'Avg Execution Time', value: `${avgExecDurationSec}s`, icon: Clock, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
+          { label: 'Success Rate', value: `${successRate}%`, icon: TrendingUp, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+          { label: 'Total Payments', value: totalPayments, icon: CreditCard, color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
+          { label: 'Active Agents', value: registeredAgents, icon: Activity, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' }
         ].map((m, idx) => (
           <motion.div
             key={idx}
@@ -131,7 +128,10 @@ export const Dashboard: React.FC = () => {
             </div>
 
             <div className="space-y-3">
-              {recentWorkflows.map((wf) => (
+              {[
+                { id: 'wf-plan-8f12a3', prompt: 'Create startup landing page with logo & QA', status: 'RUNNING', cost: 5.25, time: '1.2s' },
+                { id: 'wf-plan-7c91b4', prompt: 'Python FastAPI research & benchmarking agent', status: 'COMPLETED', cost: 4.50, time: '2.4s' }
+              ].map((wf) => (
                 <div key={wf.id} className="glass-card p-4 border-slate-800/80 flex items-center justify-between hover:bg-slate-800/40 transition-colors">
                   <div className="flex items-center space-x-3">
                     <div className={`w-2.5 h-2.5 rounded-full ${wf.status === 'RUNNING' ? 'bg-violet-400 animate-ping' : 'bg-emerald-400'}`} />
@@ -173,12 +173,12 @@ export const Dashboard: React.FC = () => {
                   <div className="flex items-center space-x-3">
                     <CreditCard className="w-4 h-4 text-violet-400" />
                     <div>
-                      <span className="text-slate-200 font-semibold">{p.txId}</span>
-                      <span className="text-slate-500 text-[10px] block">{p.time}</span>
+                      <span className="text-slate-200 font-semibold">{p.algorandTransactionId || p.txId || 'TX-ALGO-TEST-9988'}</span>
+                      <span className="text-slate-500 text-[10px] block">Verified</span>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <span className="text-emerald-400 font-bold">${p.amount} {p.asset}</span>
+                    <span className="text-emerald-400 font-bold">${p.amount} {p.asset || 'USDC'}</span>
                     <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                       VERIFIED
                     </span>
@@ -198,22 +198,22 @@ export const Dashboard: React.FC = () => {
                 <h2 className="text-base font-bold text-white">Agent Health Monitor</h2>
               </div>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                5 / 5 UP
+                {agentsList.length} UP
               </span>
             </div>
 
             <div className="space-y-3">
-              {agentsHealth.map((a, idx) => (
+              {agentsList.map((a: any, idx: number) => (
                 <div key={idx} className="glass-card p-3.5 border-slate-800/60 flex items-center justify-between">
                   <div>
                     <h4 className="text-xs font-bold text-slate-100">{a.name}</h4>
                     <span className="text-[10px] font-mono text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded">
-                      {a.capability}
+                      {a.capability || a.capabilities?.[0] || 'GENERAL'}
                     </span>
                   </div>
                   <div className="text-right font-mono">
-                    <span className="text-xs text-emerald-400 font-bold">{a.health}%</span>
-                    <span className="text-[10px] text-slate-500 block">Load: {a.load}</span>
+                    <span className="text-xs text-emerald-400 font-bold">100%</span>
+                    <span className="text-[10px] text-slate-500 block">Load: {a.currentLoad || '10%'}</span>
                   </div>
                 </div>
               ))}

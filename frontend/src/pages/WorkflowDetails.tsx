@@ -1,24 +1,32 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { 
   CheckCircle2, 
   Clock, 
   ShieldCheck, 
-  Cpu, 
   Terminal, 
   Copy, 
-  ExternalLink, 
-  ArrowLeft,
-  FileText
+  ArrowLeft
 } from 'lucide-react';
+import { useWorkflowStatus, useWorkflowLogs, useWorkflowEvents } from '../hooks/useDataHooks';
 
 export const WorkflowDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const workflowId = id || 'wf-plan-8f12a3';
+
+  const { data: statusData } = useWorkflowStatus(workflowId);
+  const { data: logsData } = useWorkflowLogs(workflowId);
+  const { data: eventsData } = useWorkflowEvents(workflowId);
+
   const [copied, setCopied] = useState(false);
   const [logFilter, setLogFilter] = useState('ALL');
 
-  const timelineSteps = [
+  const timelineSteps = eventsData && eventsData.length > 0 ? eventsData.map((e: any) => ({
+    name: e.eventType || 'EVENT',
+    time: e.timestamp ? new Date(e.timestamp).toLocaleTimeString() : '11:28:00',
+    status: 'COMPLETED',
+    detail: e.details || e.message || 'Event processed'
+  })) : [
     { name: 'Planning Completed', time: '11:28:00', status: 'COMPLETED', detail: 'Decomposed prompt into 5 tasks' },
     { name: 'Discovery Completed', time: '11:28:01', status: 'COMPLETED', detail: 'Resolved capabilities across 5 microservices' },
     { name: 'Quotes Collected', time: '11:28:02', status: 'COMPLETED', detail: 'Scored 10 candidate quotes' },
@@ -28,13 +36,20 @@ export const WorkflowDetails: React.FC = () => {
     { name: 'Workflow Completed', time: '11:28:08', status: 'COMPLETED', detail: 'Generated SHA-256 settlement receipt' }
   ];
 
-  const logs = [
+  const logsList = logsData && logsData.length > 0 ? logsData.map((log: any) => {
+    const logStr = typeof log === 'string' ? log : (log.message || JSON.stringify(log));
+    const isSuccess = logStr.includes('SUCCESS') || logStr.includes('completed');
+    const isError = logStr.includes('ERROR') || logStr.includes('failed');
+    return {
+      level: isError ? 'ERROR' : (isSuccess ? 'SUCCESS' : 'INFO'),
+      time: '11:28:00',
+      msg: logStr
+    };
+  }) : [
     { level: 'INFO', time: '11:28:00', msg: 'Starting WorkflowOrchestrator pipeline' },
     { level: 'INFO', time: '11:28:01', msg: 'Generated DAG with 5 tasks: Research, PitchDeck, Logo, Frontend, QA' },
     { level: 'INFO', time: '11:28:02', msg: 'Collected live quote responses from 5 agent microservices' },
     { level: 'INFO', time: '11:28:04', msg: 'Verified x402 payment proof via https://facilitator.goplausible.xyz' },
-    { level: 'INFO', time: '11:28:05', msg: 'Task task-1 (RESEARCH) executed on Research Agent: SUCCESS' },
-    { level: 'INFO', time: '11:28:07', msg: 'Task task-4 (FRONTEND) executed on Coding Agent: SUCCESS' },
     { level: 'SUCCESS', time: '11:28:08', msg: 'Workflow execution finished with status COMPLETED' }
   ];
 
@@ -46,7 +61,7 @@ export const WorkflowDetails: React.FC = () => {
 
   return (
     <div className="space-y-8 pb-12">
-      {/* Top Header & Navigation */}
+      {/* Top Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <Link to="/" className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors">
@@ -55,14 +70,14 @@ export const WorkflowDetails: React.FC = () => {
           <div>
             <div className="flex items-center space-x-2">
               <h1 className="text-xl font-extrabold text-white tracking-tight font-mono">
-                Workflow Details: {id || 'wf-plan-8f12a3'}
+                Workflow Details: {workflowId}
               </h1>
               <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-mono font-semibold">
-                STATUS: COMPLETED
+                STATUS: {statusData?.status || 'COMPLETED'}
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-0.5 font-sans">
-              Executed via AgentMesh x402 Pipeline • 2.8s total duration
+              Executed via AgentMesh x402 Pipeline • {statusData?.totalExecutionTimeMs || 2850}ms total duration
             </p>
           </div>
         </div>
@@ -76,7 +91,7 @@ export const WorkflowDetails: React.FC = () => {
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-7 gap-3 relative">
-          {timelineSteps.map((step, idx) => (
+          {timelineSteps.map((step: any, idx: number) => (
             <div key={idx} className="glass-card p-3 border-slate-800/80 space-y-1 relative">
               <div className="flex items-center space-x-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
@@ -151,9 +166,9 @@ export const WorkflowDetails: React.FC = () => {
             </div>
 
             <div className="bg-[#030712] p-4 rounded-xl border border-slate-800/80 h-[260px] overflow-y-auto space-y-1.5 text-xs">
-              {logs
+              {logsList
                 .filter(l => logFilter === 'ALL' || l.level === logFilter)
-                .map((log, idx) => (
+                .map((log: any, idx: number) => (
                   <div key={idx} className="flex items-start space-x-2">
                     <span className="text-slate-600 text-[10px]">{log.time}</span>
                     <span className={`text-[10px] px-1 rounded font-bold ${

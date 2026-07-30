@@ -12,6 +12,8 @@ import { PaymentsPage } from './pages/PaymentsPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { AdminPage } from './pages/AdminPage';
 
+import { DemoModeProvider } from './contexts/DemoModeContext';
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -37,30 +39,32 @@ export const App: React.FC = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <div className="flex flex-col min-h-screen bg-[#0B0F19] text-slate-100 font-sans">
-          <Navbar />
-          
-          <div className="flex flex-1 overflow-hidden">
-            <Sidebar />
+      <DemoModeProvider>
+        <BrowserRouter>
+          <div className="flex flex-col min-h-screen bg-[#0B0F19] text-slate-100 font-sans">
+            <Navbar />
             
-            <main className="flex-1 overflow-y-auto bg-[#070b14] min-h-[calc(100vh-4rem)] p-6">
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/planner" element={<PlannerPage />} />
-                <Route path="/workflows" element={<WorkflowDetails />} />
-                <Route path="/workflows/:id" element={<WorkflowDetails />} />
-                <Route path="/marketplace" element={<Marketplace />} />
-                <Route path="/payments" element={<PaymentsPage />} />
-                <Route path="/analytics" element={<AnalyticsPage />} />
-                <Route path="/admin" element={<AdminPage />} />
-              </Routes>
-            </main>
-          </div>
+            <div className="flex flex-1 overflow-hidden">
+              <Sidebar />
+              
+              <main className="flex-1 overflow-y-auto bg-[#070b14] min-h-[calc(100vh-4rem)] p-6">
+                <Routes>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/planner" element={<PlannerPage />} />
+                  <Route path="/workflows" element={<WorkflowDetails />} />
+                  <Route path="/workflows/:id" element={<WorkflowDetails />} />
+                  <Route path="/marketplace" element={<Marketplace />} />
+                  <Route path="/payments" element={<PaymentsPage />} />
+                  <Route path="/analytics" element={<AnalyticsPage />} />
+                  <Route path="/admin" element={<AdminPage />} />
+                </Routes>
+              </main>
+            </div>
 
-          <NotificationToast notifications={notifications} onDismiss={handleDismiss} />
-        </div>
-      </BrowserRouter>
+            <NotificationToast notifications={notifications} onDismiss={handleDismiss} />
+          </div>
+        </BrowserRouter>
+      </DemoModeProvider>
     </QueryClientProvider>
   );
 };

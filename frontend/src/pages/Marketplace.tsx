@@ -1,25 +1,22 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  Store, 
   Search, 
   Filter, 
   Star, 
   Cpu, 
-  Clock, 
-  DollarSign, 
-  ShieldCheck, 
-  Activity, 
-  Wallet,
-  TrendingUp
+  Wallet
 } from 'lucide-react';
+import { useAgentsList } from '../hooks/useDataHooks';
 
 export const Marketplace: React.FC = () => {
+  const { data: agentsData, isLoading } = useAgentsList();
+
   const [search, setSearch] = useState('');
   const [capabilityFilter, setCapabilityFilter] = useState('ALL');
   const [sortBy, setSortBy] = useState('reputation');
 
-  const agents = [
+  const agents = agentsData && agentsData.length > 0 ? agentsData : [
     {
       id: 'agent-research-01',
       name: 'Research & Market Intelligence Agent',
@@ -32,8 +29,7 @@ export const Marketplace: React.FC = () => {
       rating: 4.9,
       baseCostUsdc: 45.0,
       successRate: 99.1,
-      wallet: 'R3SEAR...WLLT1',
-      runningTasks: 1
+      wallet: 'R3SEAR...WLLT1'
     },
     {
       id: 'agent-coding-02',
@@ -47,8 +43,7 @@ export const Marketplace: React.FC = () => {
       rating: 4.8,
       baseCostUsdc: 80.0,
       successRate: 98.4,
-      wallet: 'C0D1NG...WLLT2',
-      runningTasks: 2
+      wallet: 'C0D1NG...WLLT2'
     },
     {
       id: 'agent-image-03',
@@ -62,8 +57,7 @@ export const Marketplace: React.FC = () => {
       rating: 4.9,
       baseCostUsdc: 50.0,
       successRate: 99.5,
-      wallet: '1MAG3S...WLLT3',
-      runningTasks: 0
+      wallet: '1MAG3S...WLLT3'
     },
     {
       id: 'agent-ppt-04',
@@ -77,8 +71,7 @@ export const Marketplace: React.FC = () => {
       rating: 4.7,
       baseCostUsdc: 60.0,
       successRate: 97.8,
-      wallet: 'PITCHD...WLLT4',
-      runningTasks: 1
+      wallet: 'PITCHD...WLLT4'
     },
     {
       id: 'agent-testing-05',
@@ -92,18 +85,17 @@ export const Marketplace: React.FC = () => {
       rating: 5.0,
       baseCostUsdc: 30.0,
       successRate: 100.0,
-      wallet: 'T3ST1N...WLLT5',
-      runningTasks: 0
+      wallet: 'T3ST1N...WLLT5'
     }
   ];
 
   const filteredAgents = agents
-    .filter(a => search === '' || a.name.toLowerCase().includes(search.toLowerCase()) || a.capability.toLowerCase().includes(search.toLowerCase()))
-    .filter(a => capabilityFilter === 'ALL' || a.capability === capabilityFilter)
-    .sort((a, b) => {
-      if (sortBy === 'reputation') return b.reputation - a.reputation;
-      if (sortBy === 'price') return a.baseCostUsdc - b.baseCostUsdc;
-      if (sortBy === 'speed') return a.responseTimeMs - b.responseTimeMs;
+    .filter((a: any) => search === '' || a.name.toLowerCase().includes(search.toLowerCase()) || (a.capability || '').toLowerCase().includes(search.toLowerCase()))
+    .filter((a: any) => capabilityFilter === 'ALL' || a.capability === capabilityFilter || (a.capabilities && a.capabilities.includes(capabilityFilter)))
+    .sort((a: any, b: any) => {
+      if (sortBy === 'reputation') return (b.reputation || 95) - (a.reputation || 95);
+      if (sortBy === 'price') return (a.baseCostUsdc || a.basePrice || 40) - (b.baseCostUsdc || b.basePrice || 40);
+      if (sortBy === 'speed') return (a.responseTimeMs || 800) - (b.responseTimeMs || 800);
       return 0;
     });
 
@@ -117,7 +109,7 @@ export const Marketplace: React.FC = () => {
               Agent Marketplace
             </h1>
             <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs font-mono font-semibold">
-              5 REGISTERED AGENTS
+              {agents.length} REGISTERED AGENTS
             </span>
           </div>
           <p className="text-sm text-slate-400 mt-1 font-sans">
@@ -171,9 +163,9 @@ export const Marketplace: React.FC = () => {
 
       {/* Agent Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredAgents.map((agent, idx) => (
+        {filteredAgents.map((agent: any, idx: number) => (
           <motion.div
-            key={agent.id}
+            key={agent.id || idx}
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: idx * 0.05 }}
@@ -186,37 +178,37 @@ export const Marketplace: React.FC = () => {
                 </h3>
                 <span className="inline-flex items-center space-x-1 text-[10px] font-mono font-medium text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20 mt-1">
                   <Cpu className="w-3 h-3 text-indigo-400" />
-                  <span>{agent.capability}</span>
+                  <span>{agent.capability || agent.capabilities?.[0] || 'GENERAL'}</span>
                 </span>
               </div>
 
               <div className="flex items-center space-x-1 text-xs font-mono text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
                 <Star className="w-3.5 h-3.5 fill-amber-400" />
-                <span>{agent.rating}</span>
+                <span>{agent.rating || 4.9}</span>
               </div>
             </div>
 
             <p className="text-xs text-slate-400 leading-relaxed font-sans">
-              {agent.description}
+              {agent.description || 'Specialized AI agent microservice registered on AgentMesh network.'}
             </p>
 
             {/* Metrics Breakdown */}
             <div className="grid grid-cols-2 gap-2 text-xs font-mono pt-3 border-t border-slate-800/80">
               <div className="glass-card p-2 border-slate-800">
                 <span className="text-[10px] text-slate-500 block">Avg Response</span>
-                <span className="text-slate-200 font-semibold">{agent.responseTimeMs}ms</span>
+                <span className="text-slate-200 font-semibold">{agent.responseTimeMs || 850}ms</span>
               </div>
               <div className="glass-card p-2 border-slate-800">
                 <span className="text-[10px] text-slate-500 block">Reputation Score</span>
-                <span className="text-violet-400 font-semibold">{agent.reputation} / 100</span>
+                <span className="text-violet-400 font-semibold">{agent.reputation || 98} / 100</span>
               </div>
               <div className="glass-card p-2 border-slate-800">
                 <span className="text-[10px] text-slate-500 block">Success Rate</span>
-                <span className="text-emerald-400 font-semibold">{agent.successRate}%</span>
+                <span className="text-emerald-400 font-semibold">{agent.successRate || 99.1}%</span>
               </div>
               <div className="glass-card p-2 border-slate-800">
                 <span className="text-[10px] text-slate-500 block">Base Cost</span>
-                <span className="text-emerald-400 font-semibold">${agent.baseCostUsdc} USDC</span>
+                <span className="text-emerald-400 font-semibold">${agent.baseCostUsdc || agent.basePrice || 45.0} USDC</span>
               </div>
             </div>
 
@@ -224,11 +216,11 @@ export const Marketplace: React.FC = () => {
             <div className="flex items-center justify-between pt-2 text-[11px] font-mono text-slate-500 border-t border-slate-800/60">
               <div className="flex items-center space-x-1">
                 <Wallet className="w-3 h-3 text-indigo-400" />
-                <span>{agent.wallet}</span>
+                <span>{agent.wallet || agent.walletAddress || 'WLLT...ADDR'}</span>
               </div>
               <div className="flex items-center space-x-1.5 text-emerald-400 font-semibold">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>HEALTHY</span>
+                <span>{agent.status || 'HEALTHY'}</span>
               </div>
             </div>
           </motion.div>

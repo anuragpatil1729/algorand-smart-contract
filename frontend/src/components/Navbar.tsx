@@ -1,8 +1,10 @@
 import React from 'react';
-import { Cpu, ShieldCheck, Zap, Wallet, ExternalLink, Activity } from 'lucide-react';
+import { Cpu, ShieldCheck, Zap, Wallet, ExternalLink, Activity, ToggleRight } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useDemoMode } from '../contexts/DemoModeContext';
 
 export const Navbar: React.FC = () => {
+  const { demoMode, toggleDemoMode } = useDemoMode();
   return (
     <header className="sticky top-0 z-40 bg-[#070b14]/80 backdrop-blur-xl border-b border-slate-800/80 px-6 py-3">
       <div className="flex items-center justify-between">
@@ -53,6 +55,19 @@ export const Navbar: React.FC = () => {
             <span className="text-slate-500">|</span>
             <span className="text-slate-400">goplausible</span>
           </motion.div>
+
+          {/* Demo Mode Toggle Switch */}
+          <button
+            onClick={toggleDemoMode}
+            className={`flex items-center space-x-2 px-3 py-1.5 rounded-xl border text-xs font-mono font-bold transition-all ${
+              demoMode
+                ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+            }`}
+          >
+            <ToggleRight className="w-4 h-4" />
+            <span>DEMO MODE: {demoMode ? 'ON' : 'OFF'}</span>
+          </button>
 
           {/* Merchant Wallet Badge */}
           <div className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-300 text-xs font-mono">
