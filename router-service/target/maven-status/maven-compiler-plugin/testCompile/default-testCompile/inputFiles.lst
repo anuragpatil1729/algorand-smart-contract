@@ -9,3 +9,9 @@
 /Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/planner/TaskValidatorTest.java
 /Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/planner/WorkflowOptimizerTest.java
 /Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/planner/WorkflowSerializerTest.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/quote/AssignmentPlannerTest.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/quote/QuoteCollectorTest.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/quote/QuoteValidatorTest.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/quote/ScoringEngineTest.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/quote/SelectionStrategyTest.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/quote/TimeoutAndFailureTest.java
