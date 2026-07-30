@@ -2,6 +2,14 @@
 /Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/HealthMonitorServiceTest.java
 /Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/RankingEngineTest.java
 /Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/RegistryServiceTest.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/execution/DependencySchedulerTest.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/execution/ExecutionStateMachineTest.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/execution/ExecutionValidatorTest.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/execution/FallbackManagerTest.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/execution/ParallelExecutionEngineTest.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/execution/RetryManagerTest.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/execution/TimeoutManagerTest.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/execution/WorkflowExecutorTest.java
 /Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/planner/CapabilityResolverTest.java
 /Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/planner/PlannerEngineTest.java
 /Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/planner/PlanningRulesEngineTest.java
