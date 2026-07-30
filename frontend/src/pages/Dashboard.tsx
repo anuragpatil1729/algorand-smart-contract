@@ -17,7 +17,7 @@ import { Link } from 'react-router-dom';
 import { useSystemMetrics, useSystemStatus, usePaymentsHistory, useAgentsList } from '../hooks/useDataHooks';
 
 export const Dashboard: React.FC = () => {
-  const { data: metricsData, isLoading: isMetricsLoading } = useSystemMetrics();
+  const { data: metricsData } = useSystemMetrics();
   const { data: statusData } = useSystemStatus();
   const { data: paymentsData } = usePaymentsHistory();
   const { data: agentsData } = useAgentsList();
@@ -29,8 +29,8 @@ export const Dashboard: React.FC = () => {
   const completedWorkflows = execMetrics.completedWorkflowsCount ?? 48;
   const registeredAgents = metricsData?.registeredAgentsCount ?? (agentsData?.length || 5);
   const revenueUsdc = payMetrics.totalRevenueUSDC ?? 245.50;
-  const avgExecDurationSec = ((execMetrics.averageExecutionDurationMs ?? 2850) / 1000).toFixed(1);
-  const successRate = 98.2;
+  const avgExecDurationSec = ((execMetrics.averageExecutionDurationMs ?? 2847) / 1000).toFixed(2);
+  const successRate = 98.42;
   const totalPayments = payMetrics.paidRequestsCount ?? 50;
 
   const recentPayments = paymentsData && paymentsData.length > 0 ? paymentsData.slice(0, 3) : [
@@ -39,11 +39,11 @@ export const Dashboard: React.FC = () => {
   ];
 
   const agentsList = agentsData && agentsData.length > 0 ? agentsData : [
-    { name: 'Research Agent', capability: 'RESEARCH', status: 'HEALTHY', currentLoad: '12%' },
-    { name: 'Coding Agent', capability: 'FRONTEND', status: 'HEALTHY', currentLoad: '24%' },
-    { name: 'Image Agent', capability: 'LOGO_DESIGN', status: 'HEALTHY', currentLoad: '8%' },
-    { name: 'PPT Agent', capability: 'PITCH_DECK', status: 'HEALTHY', currentLoad: '15%' },
-    { name: 'Testing Agent', capability: 'TESTING', status: 'HEALTHY', currentLoad: '5%' }
+    { name: 'Research & Market Intelligence Agent', capability: 'RESEARCH', status: 'HEALTHY', currentLoad: '12.4%', latency: '847ms' },
+    { name: 'Full-Stack Code Generation Agent', capability: 'FRONTEND', status: 'HEALTHY', currentLoad: '24.1%', latency: '1194ms' },
+    { name: 'Brand & Graphic Design Agent', capability: 'LOGO_DESIGN', status: 'HEALTHY', currentLoad: '8.5%', latency: '952ms' },
+    { name: 'Presentation & Pitch Deck Agent', capability: 'PITCH_DECK', status: 'HEALTHY', currentLoad: '15.2%', latency: '1103ms' },
+    { name: 'Automated QA & Security Audit Agent', capability: 'TESTING', status: 'HEALTHY', currentLoad: '5.0%', latency: '723ms' }
   ];
 
   return (
@@ -75,7 +75,7 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Top 8 Metric Cards Grid */}
+      {/* Top Metric Cards Grid with Micro Flashes */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: 'Running Workflows', value: runningWorkflows, icon: Play, color: 'text-violet-400', bg: 'bg-violet-500/10', border: 'border-violet-500/20' },
@@ -129,8 +129,8 @@ export const Dashboard: React.FC = () => {
 
             <div className="space-y-3">
               {[
-                { id: 'wf-plan-8f12a3', prompt: 'Create startup landing page with logo & QA', status: 'RUNNING', cost: 5.25, time: '1.2s' },
-                { id: 'wf-plan-7c91b4', prompt: 'Python FastAPI research & benchmarking agent', status: 'COMPLETED', cost: 4.50, time: '2.4s' }
+                { id: 'wf-plan-8f12a3', prompt: 'Create startup landing page with logo & QA', status: 'RUNNING', cost: 5.25, time: '1.24s' },
+                { id: 'wf-plan-7c91b4', prompt: 'Python FastAPI research & benchmarking agent', status: 'COMPLETED', cost: 4.50, time: '2.47s' }
               ].map((wf) => (
                 <div key={wf.id} className="glass-card p-4 border-slate-800/80 flex items-center justify-between hover:bg-slate-800/40 transition-colors">
                   <div className="flex items-center space-x-3">
@@ -213,7 +213,7 @@ export const Dashboard: React.FC = () => {
                   </div>
                   <div className="text-right font-mono">
                     <span className="text-xs text-emerald-400 font-bold">100%</span>
-                    <span className="text-[10px] text-slate-500 block">Load: {a.currentLoad || '10%'}</span>
+                    <span className="text-[10px] text-slate-500 block">Load: {a.currentLoad || '12.4%'}</span>
                   </div>
                 </div>
               ))}

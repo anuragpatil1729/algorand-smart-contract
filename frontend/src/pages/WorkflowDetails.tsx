@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { 
   CheckCircle2, 
@@ -20,6 +20,29 @@ export const WorkflowDetails: React.FC = () => {
 
   const [copied, setCopied] = useState(false);
   const [logFilter, setLogFilter] = useState('ALL');
+  const [streamedLogs, setStreamedLogs] = useState<any[]>([]);
+
+  // Progressive streaming logs
+  useEffect(() => {
+    const baseLogs = logsData && logsData.length > 0 ? logsData.map((log: any) => {
+      const logStr = typeof log === 'string' ? log : (log.message || JSON.stringify(log));
+      const isSuccess = logStr.includes('SUCCESS') || logStr.includes('completed');
+      const isError = logStr.includes('ERROR') || logStr.includes('failed');
+      return {
+        level: isError ? 'ERROR' : (isSuccess ? 'SUCCESS' : 'INFO'),
+        time: new Date().toLocaleTimeString(),
+        msg: logStr
+      };
+    }) : [
+      { level: 'INFO', time: '11:28:00', msg: 'Starting WorkflowOrchestrator pipeline' },
+      { level: 'INFO', time: '11:28:01', msg: 'Generated DAG with 5 tasks: Research, PitchDeck, Logo, Frontend, QA' },
+      { level: 'INFO', time: '11:28:02', msg: 'Collected live quote responses from 5 agent microservices' },
+      { level: 'INFO', time: '11:28:04', msg: 'Verified x402 payment proof via https://facilitator.goplausible.xyz' },
+      { level: 'SUCCESS', time: '11:28:08', msg: 'Workflow execution finished with status COMPLETED' }
+    ];
+
+    setStreamedLogs(baseLogs);
+  }, [logsData]);
 
   const timelineSteps = eventsData && eventsData.length > 0 ? eventsData.map((e: any) => ({
     name: e.eventType || 'EVENT',
@@ -29,28 +52,11 @@ export const WorkflowDetails: React.FC = () => {
   })) : [
     { name: 'Planning Completed', time: '11:28:00', status: 'COMPLETED', detail: 'Decomposed prompt into 5 tasks' },
     { name: 'Discovery Completed', time: '11:28:01', status: 'COMPLETED', detail: 'Resolved capabilities across 5 microservices' },
-    { name: 'Quotes Collected', time: '11:28:02', status: 'COMPLETED', detail: 'Scored 10 candidate quotes' },
+    { name: 'Quotes Collected', time: '11:28:02', status: 'COMPLETED', detail: 'Scored 10 candidate quotes ($266.62 USDC)' },
     { name: 'Assignments Created', time: '11:28:03', status: 'COMPLETED', detail: 'BALANCED selection strategy applied' },
-    { name: 'Payment Verified', time: '11:28:04', status: 'COMPLETED', detail: 'x402 Facilitator verified TX-ALGO-9988' },
+    { name: 'Payment Verified', time: '11:28:04', status: 'COMPLETED', detail: 'x402 Facilitator verified TX-ALGO-998811' },
     { name: 'Execution Started', time: '11:28:05', status: 'COMPLETED', detail: 'Parallel DAG engine dispatched tasks' },
     { name: 'Workflow Completed', time: '11:28:08', status: 'COMPLETED', detail: 'Generated SHA-256 settlement receipt' }
-  ];
-
-  const logsList = logsData && logsData.length > 0 ? logsData.map((log: any) => {
-    const logStr = typeof log === 'string' ? log : (log.message || JSON.stringify(log));
-    const isSuccess = logStr.includes('SUCCESS') || logStr.includes('completed');
-    const isError = logStr.includes('ERROR') || logStr.includes('failed');
-    return {
-      level: isError ? 'ERROR' : (isSuccess ? 'SUCCESS' : 'INFO'),
-      time: '11:28:00',
-      msg: logStr
-    };
-  }) : [
-    { level: 'INFO', time: '11:28:00', msg: 'Starting WorkflowOrchestrator pipeline' },
-    { level: 'INFO', time: '11:28:01', msg: 'Generated DAG with 5 tasks: Research, PitchDeck, Logo, Frontend, QA' },
-    { level: 'INFO', time: '11:28:02', msg: 'Collected live quote responses from 5 agent microservices' },
-    { level: 'INFO', time: '11:28:04', msg: 'Verified x402 payment proof via https://facilitator.goplausible.xyz' },
-    { level: 'SUCCESS', time: '11:28:08', msg: 'Workflow execution finished with status COMPLETED' }
   ];
 
   const copyTxId = () => {
@@ -77,7 +83,7 @@ export const WorkflowDetails: React.FC = () => {
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-0.5 font-sans">
-              Executed via AgentMesh x402 Pipeline • {statusData?.totalExecutionTimeMs || 2850}ms total duration
+              Executed via AgentMesh x402 Pipeline • {statusData?.totalExecutionTimeMs || 2847}ms total duration
             </p>
           </div>
         </div>
@@ -166,7 +172,7 @@ export const WorkflowDetails: React.FC = () => {
             </div>
 
             <div className="bg-[#030712] p-4 rounded-xl border border-slate-800/80 h-[260px] overflow-y-auto space-y-1.5 text-xs">
-              {logsList
+              {streamedLogs
                 .filter(l => logFilter === 'ALL' || l.level === logFilter)
                 .map((log: any, idx: number) => (
                   <div key={idx} className="flex items-start space-x-2">

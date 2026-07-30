@@ -4,6 +4,8 @@ server:
 spring:
   application:
     name: agentmesh-router
+  main:
+    allow-bean-definition-overriding: true
   datasource:
     url: jdbc:h2:mem:agentmeshdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     driverClassName: org.h2.Driver

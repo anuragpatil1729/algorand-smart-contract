@@ -9,8 +9,8 @@ import java.util.concurrent.Executor;
 @Configuration
 public class AsyncConfig {
 
-    @Bean(name = "workflowExecutor")
-    public Executor workflowExecutor() {
+    @Bean(name = "asyncTaskExecutor")
+    public Executor asyncTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(10);
         executor.setMaxPoolSize(50);
