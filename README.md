@@ -48,12 +48,12 @@ Each agent shares a common Python framework (`agents/shared`) exposing a standar
 
 ## ✨ Key Features
 
-- **Workflow decomposition & routing** — the router service splits an incoming prompt into tasks and dispatches them to registered agents.
-- **Competitive quoting** — agents return price, confidence, and time estimates; the router scores and selects quotes per task.
-- **Algorand escrow payments** — funds are locked in a PyTeal-based escrow contract and released to agents only via an atomic transaction group, guaranteeing all-or-nothing payouts.
-- **Agent health & discovery** — a registry tracks agent uptime, success rate, and rating for scoring future quotes.
-- **Live dashboard** — a React frontend for submitting workflows, tracking task graphs, and viewing payment/analytics data.
-- **Pluggable agent framework** — a shared base class + config-driven capabilities so new agent types are quick to bootstrap.
+- **Workflow decomposition & routing** — the router service splits an incoming prompt into tasks and dispatches them to registered agents via a DAG execution graph.
+- **Competitive quoting & multi-criteria scoring** — agents return price, confidence, and time estimates; the scoring engine evaluates quotes across 6 weighted parameters.
+- **x402 Protocol Algorand payments** — paid API execution endpoints (`/api/execution/start`, `/api/workflows/execute`) enforce HTTP 402 Payment Required challenges, verified via the official x402 Facilitator (`https://facilitator.goplausible.xyz`) and settled on Algorand Testnet using USDC ASA (`31566704`).
+- **Atomic smart contract payouts** — funds are locked in a PyTeal-based escrow contract and released to agents via atomic transaction groups (size ≥ 2).
+- **One-click demo pipeline (`POST /api/demo/run`)** — unified `WorkflowOrchestrator` driving prompt -> planning -> discovery -> quotes -> selection -> payment verification -> execution -> receipt generation.
+- **Real-time Mission Control Dashboard** — React + TypeScript dashboard with dark glassmorphism, Framer Motion animations, animated React Flow DAG canvas, GitHub Actions style timeline, Recharts telemetry, and WebSocket cache synchronization.
 
 ---
 
