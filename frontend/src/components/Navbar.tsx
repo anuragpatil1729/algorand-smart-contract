@@ -1,10 +1,12 @@
 import React from 'react';
-import { Cpu, ShieldCheck, Zap, Wallet, ExternalLink, Activity, ToggleRight } from 'lucide-react';
+import { Cpu, ShieldCheck, Zap, Wallet, ExternalLink, Activity, ToggleRight, Radio } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useDemoMode } from '../contexts/DemoModeContext';
+import { useWebSocket } from '../contexts/WebSocketContext';
 
 export const Navbar: React.FC = () => {
   const { demoMode, toggleDemoMode } = useDemoMode();
+  const { status: wsStatus } = useWebSocket();
   return (
     <header className="sticky top-0 z-40 bg-[#070b14]/80 backdrop-blur-xl border-b border-slate-800/80 px-6 py-3">
       <div className="flex items-center justify-between">
@@ -55,6 +57,16 @@ export const Navbar: React.FC = () => {
             <span className="text-slate-500">|</span>
             <span className="text-slate-400">goplausible</span>
           </motion.div>
+
+          {/* WebSocket Real-time Status Pill */}
+          <div className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-mono font-semibold ${
+            wsStatus === 'CONNECTED' 
+              ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
+              : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+          }`}>
+            <Radio className="w-3.5 h-3.5 animate-pulse" />
+            <span>WS: {wsStatus}</span>
+          </div>
 
           {/* Demo Mode Toggle Switch */}
           <button
