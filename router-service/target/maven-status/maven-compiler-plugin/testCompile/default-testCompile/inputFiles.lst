@@ -10,6 +10,8 @@
 /Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/execution/RetryManagerTest.java
 /Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/execution/TimeoutManagerTest.java
 /Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/execution/WorkflowExecutorTest.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/orchestration/EndToEndPipelineIntegrationTest.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/orchestration/SystemHealthAndMetricsTest.java
 /Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/planner/CapabilityResolverTest.java
 /Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/planner/PlannerEngineTest.java
 /Users/anuragpatil/algorand-smart-contract/router-service/src/test/java/com/agentmesh/router/planner/PlanningRulesEngineTest.java

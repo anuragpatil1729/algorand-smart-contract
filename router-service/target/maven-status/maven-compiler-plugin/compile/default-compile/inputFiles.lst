@@ -9,6 +9,7 @@
 /Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/controller/AdminController.java
 /Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/controller/AgentController.java
 /Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/controller/AnalyticsController.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/controller/DemoController.java
 /Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/controller/ExecutionController.java
 /Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/controller/PaymentController.java
 /Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/controller/PlannerController.java
@@ -84,6 +85,12 @@
 /Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/model/enums/TaskStatus.java
 /Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/model/enums/TaskType.java
 /Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/model/enums/WorkflowStatus.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/orchestration/WorkflowOrchestrator.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/orchestration/dto/SystemHealthDto.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/orchestration/dto/SystemMetricsDto.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/orchestration/dto/UnifiedWorkflowRequest.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/orchestration/dto/UnifiedWorkflowResponse.java
+/Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/orchestration/dto/WorkflowTimeline.java
 /Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/payment/AlgorandPaymentService.java
 /Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/planner/CapabilityResolver.java
 /Users/anuragpatil/algorand-smart-contract/router-service/src/main/java/com/agentmesh/router/planner/PlannerEngine.java
