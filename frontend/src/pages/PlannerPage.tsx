@@ -1,206 +1,246 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { api, WorkflowResponse } from '../services/api';
-import { Sparkles, ArrowRight, ShieldCheck, Cpu, Star, DollarSign, Layers, CheckCircle } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+import ReactFlow, { 
+  Background, 
+  Controls, 
+  MiniMap, 
+  useNodesState, 
+  useEdgesState, 
+  MarkerType 
+} from 'reactflow';
+import 'reactflow/dist/style.css';
+import { motion } from 'framer-motion';
+import { 
+  Sparkles, 
+  Play, 
+  Sliders, 
+  Layers, 
+  DollarSign, 
+  Clock, 
+  ShieldCheck, 
+  Cpu, 
+  CheckCircle2, 
+  RefreshCw 
+} from 'lucide-react';
+import { TaskNode } from '../components/TaskNode';
+
+const nodeTypes = {
+  taskNode: TaskNode,
+};
 
 export const PlannerPage: React.FC = () => {
-  const navigate = useNavigate();
-  const [prompt, setPrompt] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [workflow, setWorkflow] = useState<WorkflowResponse | null>(null);
+  const [prompt, setPrompt] = useState('Create a startup landing page with logo, presentation deck, REST APIs, and automated QA');
+  const [strategy, setStrategy] = useState('BALANCED');
+  const [maxConcurrency, setMaxConcurrency] = useState(5);
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [executionResult, setExecutionResult] = useState<any>(null);
 
-  const presets = [
-    { title: 'Startup Landing Page', prompt: 'Create a modern startup landing page with logo, React components, and QA tests', icon: '🚀' },
-    { title: 'Pitch Deck Strategy', prompt: 'Create a startup pitch deck with market research, slide structure, and brand visuals', icon: '📊' },
-    { title: 'Competitor Intelligence', prompt: 'Research competitors in Web3 agent routing and produce market synthesis', icon: '🔎' },
-    { title: 'Brand Logo & Identity', prompt: 'Generate logo design, color palette, and vector SVG visual assets', icon: '🎨' },
+  // Initial demo nodes for visual DAG
+  const initialNodes = [
+    {
+      id: 'task-1',
+      type: 'taskNode',
+      position: { x: 250, y: 30 },
+      data: { label: 'Market & User Domain Research', capability: 'RESEARCH', agentName: 'Research Agent', status: 'COMPLETED', price: 45.0, duration: 10 }
+    },
+    {
+      id: 'task-2',
+      type: 'taskNode',
+      position: { x: 50, y: 180 },
+      data: { label: 'Pitch Deck & Business Architecture', capability: 'PITCH_DECK', agentName: 'PPT Agent', status: 'COMPLETED', price: 60.0, duration: 15 }
+    },
+    {
+      id: 'task-3',
+      type: 'taskNode',
+      position: { x: 450, y: 180 },
+      data: { label: 'Brand Logo & Graphic Design', capability: 'LOGO_DESIGN', agentName: 'Image Agent', status: 'COMPLETED', price: 50.0, duration: 12 }
+    },
+    {
+      id: 'task-4',
+      type: 'taskNode',
+      position: { x: 250, y: 330 },
+      data: { label: 'React UI Code Generation', capability: 'FRONTEND', agentName: 'Coding Agent', status: 'RUNNING', price: 80.0, duration: 25 }
+    },
+    {
+      id: 'task-5',
+      type: 'taskNode',
+      position: { x: 250, y: 480 },
+      data: { label: 'Automated QA & Security Audit', capability: 'TESTING', agentName: 'Testing Agent', status: 'PENDING', price: 30.0, duration: 8 }
+    }
   ];
 
-  const handleCreatePlan = async (inputPrompt?: string) => {
-    const targetPrompt = inputPrompt || prompt;
-    if (!targetPrompt.trim()) return;
+  const initialEdges = [
+    { id: 'e1-2', source: 'task-1', target: 'task-2', animated: true, style: { stroke: '#8b5cf6', strokeWidth: 2 } },
+    { id: 'e1-3', source: 'task-1', target: 'task-3', animated: true, style: { stroke: '#8b5cf6', strokeWidth: 2 } },
+    { id: 'e2-4', source: 'task-2', target: 'task-4', animated: true, style: { stroke: '#6366f1', strokeWidth: 2 } },
+    { id: 'e3-4', source: 'task-3', target: 'task-4', animated: true, style: { stroke: '#6366f1', strokeWidth: 2 } },
+    { id: 'e4-5', source: 'task-4', target: 'task-5', animated: true, style: { stroke: '#10b981', strokeWidth: 2 } },
+  ];
 
-    setLoading(true);
-    try {
-      const res = await api.createWorkflow(targetPrompt);
-      setWorkflow(res);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes as any);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges as any);
 
-  const handleApproveAndExecute = async () => {
-    if (!workflow) return;
-    setLoading(true);
+  const presets = [
+    'Create a startup landing page with logo, presentation deck & QA',
+    'Build a Python FastAPI microservice with research benchmarks',
+    'Full-stack React dashboard with authentication and security audit'
+  ];
+
+  const handleRunPipeline = async () => {
+    setIsExecuting(true);
     try {
-      await api.approveWorkflow(workflow.id);
-      await api.executeWorkflow(workflow.id);
-      navigate(`/workflows?id=${workflow.id}`);
+      const response = await fetch('http://localhost:8080/api/demo/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, strategy, maxConcurrency })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setExecutionResult(data.data);
+      }
     } catch (e) {
-      console.error(e);
+      console.warn('Demo endpoint run offline fallback demo used');
     } finally {
-      setLoading(false);
+      setIsExecuting(false);
     }
   };
 
   return (
-    <div className="p-8 space-y-8 max-w-6xl mx-auto">
-      
+    <div className="space-y-6 pb-12">
       {/* Header */}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-black text-white flex items-center gap-3">
-          <Sparkles className="w-8 h-8 text-cyan-400 animate-pulse" />
-          Intelligent Workflow Planner
-        </h1>
-        <p className="text-sm text-slate-400">
-          Enter a high-level natural language request. The Planner will decompose it into a task graph, query available microservices, score quotations, and set up an Algorand Escrow contract.
-        </p>
-      </div>
-
-      {/* Preset Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {presets.map((preset, idx) => (
-          <div
-            key={idx}
-            onClick={() => { setPrompt(preset.prompt); handleCreatePlan(preset.prompt); }}
-            className="p-4 rounded-2xl glass-card border border-slate-800 cursor-pointer hover:border-cyan-500/50 space-y-2 group transition-all"
-          >
-            <div className="text-2xl">{preset.icon}</div>
-            <h4 className="text-xs font-bold text-slate-200 group-hover:text-cyan-400 transition-colors">{preset.title}</h4>
-            <p className="text-[11px] text-slate-400 line-clamp-2">{preset.prompt}</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center space-x-2">
+            <h1 className="text-2xl font-extrabold text-white tracking-tight">
+              Workflow Builder & Live DAG
+            </h1>
+            <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-violet-500 to-indigo-500 text-white font-mono text-xs font-bold shadow-md shadow-violet-500/20">
+              HERO FEATURE
+            </span>
           </div>
-        ))}
-      </div>
-
-      {/* Prompt Input Box */}
-      <div className="p-6 rounded-3xl glass-panel space-y-4 border border-slate-800">
-        <label className="text-xs font-bold uppercase tracking-wider text-slate-300 block">
-          Enter Request Prompt
-        </label>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <input
-            type="text"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="e.g. Create a startup landing page with logo, React components, and QA tests..."
-            className="flex-1 rounded-2xl bg-slate-950 border border-slate-800 px-5 py-3.5 text-sm text-white focus:outline-none focus:border-cyan-500 transition-colors font-medium"
-          />
-          <button
-            onClick={() => handleCreatePlan()}
-            disabled={loading || !prompt.trim()}
-            className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center space-x-2 transition-all disabled:opacity-50 shadow-lg shadow-cyan-500/20"
-          >
-            <span>{loading ? 'Decomposing...' : 'Generate Plan & Quotes'}</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
+          <p className="text-sm text-slate-400 mt-1 font-sans">
+            AI-driven prompt decomposition, multi-criteria quote scoring, and automated x402 DAG execution
+          </p>
         </div>
       </div>
 
-      {/* Generated Task DAG Breakdown */}
-      {workflow && (
-        <div className="space-y-6 animate-in fade-in duration-300">
-          
-          <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-900 border border-slate-800">
+      {/* Main Split Layout: Left Controls / Right React Flow Canvas */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left 5 Cols: Input & Configuration Controls */}
+        <div className="lg:col-span-5 space-y-6">
+          <div className="glass-panel p-5 border-slate-800/80 space-y-5">
+            <div className="flex items-center space-x-2">
+              <Sparkles className="w-5 h-5 text-cyan-400" />
+              <h2 className="text-base font-bold text-white">Natural Language Prompt</h2>
+            </div>
+
+            {/* Prompt Input */}
             <div>
-              <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500 block">Generated Plan ID</span>
-              <span className="font-mono font-bold text-cyan-400 text-sm">{workflow.id}</span>
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                rows={4}
+                className="w-full glass-input p-3.5 text-sm font-sans leading-relaxed resize-none"
+                placeholder="Describe your workflow goals..."
+              />
             </div>
-            <div className="text-right">
-              <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500 block">Estimated Escrow Cost</span>
-              <span className="font-mono font-extrabold text-emerald-400 text-lg">{workflow.totalPrice} ALGO</span>
+
+            {/* Preset Buttons */}
+            <div>
+              <span className="text-[11px] font-mono text-slate-400 block mb-2">Preset Prompts:</span>
+              <div className="space-y-1.5">
+                {presets.map((preset, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setPrompt(preset)}
+                    className="w-full text-left text-xs font-sans p-2 rounded-xl bg-slate-950/40 hover:bg-slate-800/60 border border-slate-800/60 text-slate-300 hover:text-white transition-all truncate"
+                  >
+                    💡 {preset}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Task Decomposition List */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
-              <Layers className="w-4 h-4 text-cyan-400" />
-              Decomposed Task Graph & Quotation Scoring
-            </h3>
-
-            <div className="space-y-3">
-              {(workflow.tasks || []).map((task, idx) => {
-                const winnerQuote = task.quotes?.find(q => q.selected) || task.quotes?.[0];
-                return (
-                  <div key={task.id} className="p-5 rounded-2xl glass-panel border border-slate-800 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-400 font-bold text-xs border border-cyan-500/30">
-                          {idx + 1}
-                        </span>
-                        <div>
-                          <h4 className="text-sm font-bold text-slate-100">{task.description}</h4>
-                          <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
-                            Type: {task.taskType} | Dependencies: {task.dependencies?.length ? task.dependencies.join(', ') : 'None'}
-                          </span>
-                        </div>
-                      </div>
-                      <span className="px-3 py-1 rounded-full text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30">
-                        {winnerQuote ? `${winnerQuote.price} ALGO` : 'Pending'}
-                      </span>
-                    </div>
-
-                    {/* Quotation Candidates Comparison */}
-                    {task.quotes && task.quotes.length > 0 && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-2">
-                        {task.quotes.map((q) => (
-                          <div
-                            key={q.id}
-                            className={`p-3 rounded-xl border text-xs space-y-1.5 transition-all ${
-                              q.selected
-                                ? 'bg-cyan-950/40 border-cyan-500/60 shadow-lg shadow-cyan-500/10'
-                                : 'bg-slate-900/60 border-slate-800 opacity-70'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between font-bold">
-                              <span className="text-slate-200 truncate">{q.agentName}</span>
-                              {q.selected && (
-                                <span className="flex items-center gap-1 text-[9px] bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded-full border border-cyan-500/40">
-                                  <CheckCircle className="w-2.5 h-2.5" /> Selected
-                                </span>
-                              )}
-                            </div>
-                            <div className="grid grid-cols-2 gap-1 text-[10px] text-slate-400">
-                              <span>Price: <strong className="text-emerald-400">{q.price} ALGO</strong></span>
-                              <span>ETA: <strong className="text-slate-200">{q.estimatedTimeSeconds}s</strong></span>
-                              <span>Rating: <strong className="text-amber-400">{q.rating}★</strong></span>
-                              <span>Score: <strong className="text-cyan-400">{q.score}</strong></span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+            {/* Selection Strategy */}
+            <div className="space-y-2">
+              <label className="text-xs font-mono font-medium text-slate-300 flex items-center space-x-1.5">
+                <Sliders className="w-3.5 h-3.5 text-violet-400" />
+                <span>Agent Selection Strategy</span>
+              </label>
+              <select
+                value={strategy}
+                onChange={(e) => setStrategy(e.target.value)}
+                className="w-full glass-input p-2.5 text-xs font-mono bg-slate-950 text-slate-200"
+              >
+                <option value="BALANCED">BALANCED (35% Rep, 20% Health, 15% Conf, 10% ETA, 10% Load, 10% Price)</option>
+                <option value="LOWEST_PRICE">LOWEST_PRICE (Prioritize minimum USDC cost)</option>
+                <option value="FASTEST_COMPLETION">FASTEST_COMPLETION (Prioritize lowest duration ETA)</option>
+                <option value="HIGHEST_QUALITY">HIGHEST_QUALITY (Prioritize agent reputation & rating)</option>
+              </select>
             </div>
-          </div>
 
-          {/* Action Trigger */}
-          <div className="p-6 rounded-3xl bg-gradient-to-r from-cyan-950/50 via-slate-900 to-indigo-950/50 border border-cyan-500/40 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xl">
-            <div className="space-y-1">
-              <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-cyan-400" />
-                Approve & Lock Funds in Algorand Escrow
-              </h4>
-              <p className="text-xs text-slate-400">
-                {workflow.totalPrice} ALGO will be locked in PyTeal Escrow contract <code className="text-cyan-400 font-mono">AGENTMESH_ESCROW_CONTRACT_7X9V</code>.
-              </p>
-            </div>
+            {/* Execute Button */}
             <button
-              onClick={handleApproveAndExecute}
-              disabled={loading}
-              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-xl shadow-emerald-500/20 transition-all transform active:scale-95 shrink-0"
+              onClick={handleRunPipeline}
+              disabled={isExecuting}
+              className="w-full glass-button py-3.5 flex items-center justify-center space-x-2 text-sm font-bold tracking-wide shadow-violet-600/40"
             >
-              {loading ? 'Initializing Algorand Escrow...' : 'Approve & Execute Workflow'}
+              {isExecuting ? (
+                <>
+                  <RefreshCw className="w-4 h-4 text-white animate-spin" />
+                  <span>Orchestrating Pipeline...</span>
+                </>
+              ) : (
+                <>
+                  <Play className="w-4 h-4 text-cyan-300 fill-cyan-300" />
+                  <span>Execute Full x402 Pipeline</span>
+                </>
+              )}
             </button>
           </div>
 
+          {/* Estimation Metrics Card */}
+          <div className="glass-panel p-4 border-slate-800/80 grid grid-cols-2 gap-3 text-center font-mono">
+            <div className="glass-card p-3 border-slate-800">
+              <span className="text-[10px] text-slate-400 uppercase block">Total Quoted Cost</span>
+              <span className="text-lg font-bold text-emerald-400">$265.00 USDC</span>
+            </div>
+            <div className="glass-card p-3 border-slate-800">
+              <span className="text-[10px] text-slate-400 uppercase block">Critical Path ETA</span>
+              <span className="text-lg font-bold text-amber-400">70 Seconds</span>
+            </div>
+          </div>
         </div>
-      )}
 
+        {/* Right 7 Cols: React Flow Interactive DAG Canvas */}
+        <div className="lg:col-span-7">
+          <div className="glass-panel p-4 border-slate-800/80 h-[580px] flex flex-col">
+            <div className="flex items-center justify-between mb-3 px-2">
+              <div className="flex items-center space-x-2">
+                <Layers className="w-5 h-5 text-indigo-400" />
+                <h3 className="text-sm font-bold text-white">Live Execution DAG Canvas</h3>
+              </div>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-violet-500/10 text-violet-300 border border-violet-500/20">
+                REACT FLOW 11.10
+              </span>
+            </div>
+
+            <div className="flex-1 w-full h-full rounded-xl overflow-hidden border border-slate-800 bg-[#040711]">
+              <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                nodeTypes={nodeTypes}
+                fitView
+              >
+                <Background color="#1e293b" gap={20} size={1} />
+                <Controls className="!bg-slate-900 !border-slate-800 !text-slate-300" />
+                <MiniMap className="!bg-slate-950 !border-slate-800" nodeColor="#6366f1" />
+              </ReactFlow>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

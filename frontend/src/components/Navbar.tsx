@@ -1,54 +1,64 @@
 import React from 'react';
-import { Shield, Zap, Wallet, Cpu, Activity } from 'lucide-react';
+import { Cpu, ShieldCheck, Zap, Wallet, ExternalLink, Activity } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export const Navbar: React.FC = () => {
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-[#0B0F19]/80 backdrop-blur-xl">
-      <div className="flex h-16 items-center justify-between px-6">
-        
-        {/* Brand Logo */}
+    <header className="sticky top-0 z-40 bg-[#070b14]/80 backdrop-blur-xl border-b border-slate-800/80 px-6 py-3">
+      <div className="flex items-center justify-between">
+        {/* Left: Platform Title & Breadcrumb */}
         <div className="flex items-center space-x-3">
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-500 via-indigo-500 to-purple-600 p-0.5 shadow-lg shadow-cyan-500/20">
-            <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-[#0B0F19]">
-              <Zap className="h-5 w-5 text-cyan-400 animate-pulse" />
+          <div className="flex items-center space-x-2">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-violet-600 via-indigo-600 to-cyan-400 p-0.5 shadow-lg shadow-indigo-500/20">
+              <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
+                <Zap className="w-5 h-5 text-cyan-400" />
+              </div>
             </div>
-          </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <span className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-cyan-400 bg-clip-text text-transparent">
-                AgentMesh
-              </span>
-              <span className="rounded-full bg-cyan-950/80 px-2 py-0.5 text-[10px] font-bold text-cyan-400 border border-cyan-500/30">
-                v1.0 ALGORAND
-              </span>
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="font-bold text-lg bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent tracking-tight">
+                  AgentMesh
+                </span>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20 uppercase tracking-widest">
+                  v1.0 x402
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 font-mono hidden sm:block">
+                Pay-Per-Use AI Orchestration Engine
+              </p>
             </div>
-            <p className="text-[11px] font-medium text-slate-400">Autonomous AI Multi-Agent Service Router</p>
           </div>
         </div>
 
-        {/* Live Network Indicators & Algorand Wallet */}
-        <div className="flex items-center space-x-4">
-          <div className="hidden md:flex items-center space-x-2 rounded-xl bg-slate-900/90 border border-slate-800 px-3 py-1.5 text-xs text-slate-300">
-            <Activity className="h-4 w-4 text-emerald-400 animate-pulse" />
-            <span>Router Engine: <strong className="text-emerald-400">ONLINE</strong></span>
-            <span className="text-slate-600">|</span>
-            <Cpu className="h-4 w-4 text-cyan-400" />
-            <span>Agents: <strong className="text-cyan-400">5 Active</strong></span>
-          </div>
+        {/* Center/Right: Network Live Badges & Status */}
+        <div className="flex items-center space-x-3">
+          {/* Algorand Testnet Status Pill */}
+          <motion.div 
+            whileHover={{ scale: 1.02 }}
+            className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono"
+          >
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="font-semibold hidden md:inline">ALGORAND TESTNET</span>
+            <span className="text-slate-500 hidden md:inline">|</span>
+            <span className="text-emerald-300">USDC ASA</span>
+          </motion.div>
 
-          {/* Algorand Wallet Chip */}
-          <div className="flex items-center space-x-3 rounded-xl bg-gradient-to-r from-slate-900 via-slate-900 to-cyan-950/40 border border-cyan-500/30 px-3.5 py-1.5 text-xs shadow-inner">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
-              <Shield className="h-4 w-4" />
-            </div>
-            <div>
-              <div className="text-[10px] font-semibold text-slate-400 flex items-center gap-1">
-                <Wallet className="h-3 w-3 text-cyan-400" /> Escrow Balance
-              </div>
-              <span className="font-mono text-sm font-bold text-cyan-300">
-                1,250.00 <span className="text-[10px] text-cyan-400">ALGO</span>
-              </span>
-            </div>
+          {/* x402 Facilitator Badge */}
+          <motion.div 
+            whileHover={{ scale: 1.02 }}
+            className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-300 text-xs font-mono hidden sm:flex"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-violet-400" />
+            <span className="font-semibold">x402 FACILITATOR</span>
+            <span className="text-slate-500">|</span>
+            <span className="text-slate-400">goplausible</span>
+          </motion.div>
+
+          {/* Merchant Wallet Badge */}
+          <div className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-300 text-xs font-mono">
+            <Wallet className="w-3.5 h-3.5 text-indigo-400" />
+            <span className="text-slate-400 hidden lg:inline">Merchant:</span>
+            <span className="text-indigo-300 font-medium">D64E...OHKPQ</span>
           </div>
         </div>
       </div>

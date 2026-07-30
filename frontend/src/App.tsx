@@ -44,11 +44,12 @@ export const App: React.FC = () => {
           <div className="flex flex-1 overflow-hidden">
             <Sidebar />
             
-            <main className="flex-1 overflow-y-auto bg-[#0B0F19] min-h-[calc(100vh-4rem)]">
+            <main className="flex-1 overflow-y-auto bg-[#070b14] min-h-[calc(100vh-4rem)] p-6">
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/planner" element={<PlannerPage />} />
                 <Route path="/workflows" element={<WorkflowDetails />} />
+                <Route path="/workflows/:id" element={<WorkflowDetails />} />
                 <Route path="/marketplace" element={<Marketplace />} />
                 <Route path="/payments" element={<PaymentsPage />} />
                 <Route path="/analytics" element={<AnalyticsPage />} />

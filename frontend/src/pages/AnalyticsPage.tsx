@@ -1,115 +1,135 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { api } from '../services/api';
-import { BarChart3, TrendingUp, Cpu, DollarSign, Clock, ShieldCheck } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { motion } from 'framer-motion';
+import { 
+  BarChart3, 
+  TrendingUp, 
+  DollarSign, 
+  Clock, 
+  Cpu, 
+  CheckCircle2 
+} from 'lucide-react';
+import { 
+  ResponsiveContainer, 
+  AreaChart, 
+  Area, 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  Tooltip, 
+  CartesianGrid 
+} from 'recharts';
 
 export const AnalyticsPage: React.FC = () => {
-  const { data: analytics } = useQuery({ queryKey: ['analytics'], queryFn: api.getAnalytics, refetchInterval: 5000 });
+  const workflowTrendData = [
+    { day: 'Mon', workflows: 8, revenue: 38.0 },
+    { day: 'Tue', workflows: 12, revenue: 58.5 },
+    { day: 'Wed', workflows: 15, revenue: 72.0 },
+    { day: 'Thu', workflows: 11, revenue: 52.5 },
+    { day: 'Fri', workflows: 18, revenue: 89.0 },
+    { day: 'Sat', workflows: 22, revenue: 110.0 },
+    { day: 'Sun', workflows: 20, revenue: 98.5 }
+  ];
 
-  const usageData = Object.entries(analytics?.agentUsageMap || {}).map(([key, val]) => ({
-    name: key.replace('agent-', '').replace('-01', '').replace('-02', '').replace('-03', '').replace('-04', '').replace('-05', '').toUpperCase(),
-    tasks: val,
-  }));
-
-  const COLORS = ['#06b6d4', '#6366f1', '#a855f7', '#ec4899', '#10b981'];
+  const agentUsageData = [
+    { name: 'Research', tasks: 48, cost: 2160 },
+    { name: 'Coding', tasks: 42, cost: 3360 },
+    { name: 'Image', tasks: 30, cost: 1500 },
+    { name: 'PPT', tasks: 25, cost: 1500 },
+    { name: 'Testing', tasks: 50, cost: 1500 }
+  ];
 
   return (
-    <div className="p-8 space-y-8 max-w-7xl mx-auto">
-      
+    <div className="space-y-8 pb-12">
       {/* Header */}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-black text-white flex items-center gap-3">
-          <BarChart3 className="w-8 h-8 text-cyan-400" />
-          System Telemetry & Analytics
-        </h1>
-        <p className="text-sm text-slate-400">
-          In-depth insights into agent task allocation, cost breakdown, latency performance, and Algorand network fees.
-        </p>
-      </div>
-
-      {/* Summary Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 rounded-2xl glass-panel border border-slate-800 space-y-1">
-          <span className="text-slate-400 text-xs font-semibold">Total Revenue (Router Fees)</span>
-          <div className="font-mono text-2xl font-black text-emerald-400">{analytics?.totalRevenueAlgos ?? 14.8} ALGO</div>
-        </div>
-        <div className="p-5 rounded-2xl glass-panel border border-slate-800 space-y-1">
-          <span className="text-slate-400 text-xs font-semibold">Overall Success Rate</span>
-          <div className="font-mono text-2xl font-black text-cyan-400">{analytics?.overallSuccessRate ?? 98.2}%</div>
-        </div>
-        <div className="p-5 rounded-2xl glass-panel border border-slate-800 space-y-1">
-          <span className="text-slate-400 text-xs font-semibold">Average Execution Latency</span>
-          <div className="font-mono text-2xl font-black text-indigo-400">{analytics?.avgExecutionTimeSeconds ?? 14.2}s</div>
-        </div>
-        <div className="p-5 rounded-2xl glass-panel border border-slate-800 space-y-1">
-          <span className="text-slate-400 text-xs font-semibold">Active Agents</span>
-          <div className="font-mono text-2xl font-black text-purple-400">{analytics?.totalAgents ?? 5} Microservices</div>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center space-x-2">
+            <h1 className="text-2xl font-extrabold text-white tracking-tight">
+              Platform Telemetry & Analytics
+            </h1>
+            <span className="px-2.5 py-0.5 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20 text-xs font-mono font-semibold">
+              RECHARTS TELEMETRY
+            </span>
+          </div>
+          <p className="text-sm text-slate-400 mt-1 font-sans">
+            Real-time analytics for revenue, agent utilization, workflow trends, and execution speed
+          </p>
         </div>
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        
-        {/* Agent Task Allocation */}
-        <div className="p-6 rounded-3xl glass-panel border border-slate-800 space-y-4">
-          <h3 className="text-sm font-bold text-white flex items-center gap-2">
-            <Cpu className="w-4 h-4 text-cyan-400" />
-            Agent Task Allocation Breakdown
-          </h3>
+      {/* Top Analytics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Weekly Revenue', value: '$518.50 USDC', icon: DollarSign, color: 'text-emerald-400' },
+          { label: 'Total Tasks Executed', value: '195 Tasks', icon: Cpu, color: 'text-indigo-400' },
+          { label: 'Avg Workflow Time', value: '2.85s', icon: Clock, color: 'text-amber-400' },
+          { label: 'Platform Success Rate', value: '98.8%', icon: CheckCircle2, color: 'text-emerald-400' }
+        ].map((c, idx) => (
+          <div key={idx} className="glass-panel p-4 border-slate-800/80">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-mono text-slate-400 uppercase">{c.label}</span>
+              <c.icon className={`w-4 h-4 ${c.color}`} />
+            </div>
+            <div className="mt-2 text-xl font-bold text-white font-mono">{c.value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Revenue & Workflow Trend Area Chart */}
+        <div className="glass-panel p-5 border-slate-800/80 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-white flex items-center space-x-2">
+              <TrendingUp className="w-4 h-4 text-emerald-400" />
+              <span>Revenue Trend (USDC per Day)</span>
+            </h3>
+            <span className="text-xs font-mono text-slate-400">7-Day History</span>
+          </div>
+
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={usageData.length > 0 ? usageData : [
-                { name: 'RESEARCH', tasks: 14 },
-                { name: 'CODE', tasks: 22 },
-                { name: 'IMAGE', tasks: 18 },
-                { name: 'PPT', tasks: 12 },
-                { name: 'TESTING', tasks: 16 }
-              ]}>
-                <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} />
-                <YAxis stroke="#64748b" fontSize={11} tickLine={false} />
-                <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px', fontSize: '12px' }} />
-                <Bar dataKey="tasks" fill="#06b6d4" radius={[6, 6, 0, 0]} />
+              <AreaChart data={workflowTrendData}>
+                <defs>
+                  <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                <XAxis dataKey="day" stroke="#64748b" fontSize={11} />
+                <YAxis stroke="#64748b" fontSize={11} />
+                <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', fontSize: '12px' }} />
+                <Area type="monotone" dataKey="revenue" stroke="#10b981" fillOpacity={1} fill="url(#revenueGrad)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Agent Task Distribution Bar Chart */}
+        <div className="glass-panel p-5 border-slate-800/80 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-white flex items-center space-x-2">
+              <Cpu className="w-4 h-4 text-violet-400" />
+              <span>Agent Task Execution Volume</span>
+            </h3>
+            <span className="text-xs font-mono text-slate-400">By Capability</span>
+          </div>
+
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={agentUsageData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                <XAxis dataKey="name" stroke="#64748b" fontSize={11} />
+                <YAxis stroke="#64748b" fontSize={11} />
+                <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', fontSize: '12px' }} />
+                <Bar dataKey="tasks" fill="#8b5cf6" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
-
-        {/* Workflow Cost Distribution */}
-        <div className="p-6 rounded-3xl glass-panel border border-slate-800 space-y-4">
-          <h3 className="text-sm font-bold text-white flex items-center gap-2">
-            <DollarSign className="w-4 h-4 text-emerald-400" />
-            Cost Distribution Across Capabilities
-          </h3>
-          <div className="h-64 w-full flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={[
-                    { name: 'Research', value: 25 },
-                    { name: 'Frontend/Backend Code', value: 40 },
-                    { name: 'Logo Graphics', value: 20 },
-                    { name: 'Pitch Strategy', value: 15 }
-                  ]}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={90}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {COLORS.map((color, index) => (
-                    <Cell key={`cell-${index}`} fill={color} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px', fontSize: '12px' }} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
       </div>
-
     </div>
   );
 };

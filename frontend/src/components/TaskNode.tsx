@@ -1,96 +1,105 @@
-import React from 'react';
-import { Handle, Position } from 'reactflow';
-import { CheckCircle2, Clock, AlertTriangle, Play, Cpu, ShieldCheck } from 'lucide-react';
+import React, { memo } from 'react';
+import { Handle, Position, NodeProps } from 'reactflow';
+import { Cpu, CheckCircle2, AlertCircle, RefreshCw, Clock } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export interface TaskNodeData {
-  title: string;
-  type: string;
-  assignedAgent?: string;
-  status: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
-  price: number;
-  executionTimeMs?: number;
-  complexity?: string;
+  label: string;
+  capability: string;
+  agentName?: string;
+  status: 'PENDING' | 'READY' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'RETRYING';
+  price?: number;
+  duration?: number;
+  progress?: number;
 }
 
-export const TaskNode: React.FC<{ data: TaskNodeData }> = ({ data }) => {
-  const getStatusStyles = () => {
-    switch (data.status) {
+export const TaskNode: React.FC<NodeProps<TaskNodeData>> = memo(({ data }) => {
+  const getStatusStyles = (status: TaskNodeData['status']) => {
+    switch (status) {
       case 'RUNNING':
         return {
-          bg: 'bg-blue-950/80 border-blue-500 shadow-blue-500/30',
-          badge: 'bg-blue-500/20 text-blue-400 border-blue-500/40',
-          icon: <Play className="w-3.5 h-3.5 animate-spin text-blue-400" />,
-          label: 'RUNNING',
-          pulse: 'animate-pulse border-blue-400'
+          border: 'border-violet-500/80 shadow-lg shadow-violet-500/20 bg-slate-900/90',
+          badge: 'bg-violet-500/20 text-violet-300 border-violet-500/40',
+          icon: <RefreshCw className="w-3.5 h-3.5 text-violet-400 animate-spin" />,
+          dot: 'bg-violet-400 animate-ping'
         };
       case 'COMPLETED':
         return {
-          bg: 'bg-emerald-950/80 border-emerald-500 shadow-emerald-500/20',
-          badge: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40',
+          border: 'border-emerald-500/60 shadow-lg shadow-emerald-500/10 bg-slate-900/90',
+          badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
           icon: <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />,
-          label: 'COMPLETED',
-          pulse: ''
+          dot: 'bg-emerald-400'
         };
       case 'FAILED':
         return {
-          bg: 'bg-rose-950/80 border-rose-500 shadow-rose-500/20',
-          badge: 'bg-rose-500/20 text-rose-400 border-rose-500/40',
-          icon: <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />,
-          label: 'FAILED',
-          pulse: ''
+          border: 'border-rose-500/60 shadow-lg shadow-rose-500/10 bg-slate-900/90',
+          badge: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
+          icon: <AlertCircle className="w-3.5 h-3.5 text-rose-400" />,
+          dot: 'bg-rose-400'
+        };
+      case 'RETRYING':
+        return {
+          border: 'border-amber-500/60 shadow-lg shadow-amber-500/10 bg-slate-900/90',
+          badge: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+          icon: <RefreshCw className="w-3.5 h-3.5 text-amber-400 animate-spin" />,
+          dot: 'bg-amber-400'
         };
       default:
         return {
-          bg: 'bg-slate-900/90 border-slate-700/80 shadow-slate-900/50',
-          badge: 'bg-slate-800 text-slate-400 border-slate-700',
-          icon: <Clock className="w-3.5 h-3.5 text-slate-400" />,
-          label: 'PENDING',
-          pulse: ''
+          border: 'border-slate-800 bg-slate-950/80 hover:border-slate-700',
+          badge: 'bg-slate-800/80 text-slate-400 border-slate-700/60',
+          icon: <Clock className="w-3.5 h-3.5 text-slate-500" />,
+          dot: 'bg-slate-500'
         };
     }
   };
 
-  const style = getStatusStyles();
+  const style = getStatusStyles(data.status);
 
   return (
-    <div className={`w-72 rounded-2xl border ${style.bg} ${style.pulse} p-4 shadow-xl backdrop-blur-md transition-all duration-300`}>
-      <Handle type="target" position={Position.Top} className="!bg-cyan-500" />
+    <motion.div
+      initial={{ scale: 0.9, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ duration: 0.2 }}
+      className={`w-64 p-3.5 rounded-2xl border backdrop-blur-xl transition-all duration-300 ${style.border}`}
+    >
+      <Handle type="target" position={Position.Top} className="!bg-slate-500 !w-3 !h-3 !border-2 !border-slate-900" />
 
-      {/* Header Badge */}
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700">
-          {data.type}
-        </span>
-        <span className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${style.badge}`}>
+      {/* Header: Title & Status Badge */}
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="flex items-center space-x-2">
+          <span className={`w-2 h-2 rounded-full ${style.dot}`} />
+          <h4 className="text-xs font-semibold text-slate-100 truncate max-w-[140px]" title={data.label}>
+            {data.label}
+          </h4>
+        </div>
+        <div className={`flex items-center space-x-1 text-[10px] font-mono px-2 py-0.5 rounded-full border ${style.badge}`}>
           {style.icon}
-          <span>{style.label}</span>
+          <span className="font-medium">{data.status}</span>
+        </div>
+      </div>
+
+      {/* Capability Pill */}
+      <div className="mb-2">
+        <span className="inline-flex items-center space-x-1 text-[10px] font-mono font-medium text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20">
+          <Cpu className="w-3 h-3 text-indigo-400" />
+          <span>{data.capability}</span>
         </span>
       </div>
 
-      {/* Title */}
-      <h4 className="text-xs font-bold text-slate-100 mb-2 line-clamp-2 leading-snug">
-        {data.title}
-      </h4>
-
-      {/* Agent & Specs */}
-      <div className="space-y-1.5 border-t border-slate-800/80 pt-2 text-[11px]">
-        <div className="flex items-center justify-between text-slate-400">
-          <span className="flex items-center gap-1"><Cpu className="w-3 h-3 text-cyan-400" /> Agent:</span>
-          <span className="font-semibold text-cyan-300 truncate max-w-[140px]">{data.assignedAgent || 'Auto-Selecting...'}</span>
-        </div>
-        <div className="flex items-center justify-between text-slate-400">
-          <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3 text-indigo-400" /> Escrow Fee:</span>
-          <span className="font-mono font-bold text-emerald-400">{data.price ? `${data.price} ALGO` : 'Calculating...'}</span>
-        </div>
-        {data.executionTimeMs ? (
-          <div className="flex items-center justify-between text-slate-400 text-[10px]">
-            <span>Latency:</span>
-            <span className="font-mono text-slate-300">{data.executionTimeMs} ms</span>
-          </div>
-        ) : null}
+      {/* Assigned Agent & Price */}
+      <div className="flex items-center justify-between text-[11px] pt-2 border-t border-slate-800/60 font-mono text-slate-400">
+        <span className="truncate max-w-[130px]" title={data.agentName || 'Auto-assigning...'}>
+          {data.agentName || 'Auto-assigning...'}
+        </span>
+        {data.price !== undefined && (
+          <span className="font-semibold text-emerald-400">
+            ${data.price.toFixed(2)} USDC
+          </span>
+        )}
       </div>
 
-      <Handle type="source" position={Position.Bottom} className="!bg-cyan-500" />
-    </div>
+      <Handle type="source" position={Position.Bottom} className="!bg-violet-500 !w-3 !h-3 !border-2 !border-slate-900" />
+    </motion.div>
   );
-};
+});
