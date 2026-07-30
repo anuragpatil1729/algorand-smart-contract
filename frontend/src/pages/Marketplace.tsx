@@ -5,7 +5,8 @@ import {
   Filter, 
   Star, 
   Cpu, 
-  Wallet
+  Wallet,
+  Activity
 } from 'lucide-react';
 import { useAgentsList } from '../hooks/useDataHooks';
 
@@ -16,81 +17,10 @@ export const Marketplace: React.FC = () => {
   const [capabilityFilter, setCapabilityFilter] = useState('ALL');
   const [sortBy, setSortBy] = useState('reputation');
 
-  const agents = agentsData && agentsData.length > 0 ? agentsData : [
-    {
-      id: 'agent-research-01',
-      name: 'Research & Market Intelligence Agent',
-      capability: 'RESEARCH',
-      description: 'Performs deep web research, competitive landscape analysis, and domain synthesis.',
-      health: 100,
-      load: '12%',
-      responseTimeMs: 850,
-      reputation: 98,
-      rating: 4.9,
-      baseCostUsdc: 45.0,
-      successRate: 99.1,
-      wallet: 'R3SEAR...WLLT1'
-    },
-    {
-      id: 'agent-coding-02',
-      name: 'Full-Stack Code Generation Agent',
-      capability: 'FRONTEND',
-      description: 'Generates clean React, TypeScript, and FastAPI microservice backend code.',
-      health: 98,
-      load: '24%',
-      responseTimeMs: 1200,
-      reputation: 96,
-      rating: 4.8,
-      baseCostUsdc: 80.0,
-      successRate: 98.4,
-      wallet: 'C0D1NG...WLLT2'
-    },
-    {
-      id: 'agent-image-03',
-      name: 'Brand & Graphic Design Agent',
-      capability: 'LOGO_DESIGN',
-      description: 'Creates brand identities, vector logos, and UI illustration assets.',
-      health: 100,
-      load: '8%',
-      responseTimeMs: 950,
-      reputation: 97,
-      rating: 4.9,
-      baseCostUsdc: 50.0,
-      successRate: 99.5,
-      wallet: '1MAG3S...WLLT3'
-    },
-    {
-      id: 'agent-ppt-04',
-      name: 'Presentation & Pitch Deck Agent',
-      capability: 'PITCH_DECK',
-      description: 'Architects executive pitch decks, investor slides, and business models.',
-      health: 95,
-      load: '15%',
-      responseTimeMs: 1100,
-      reputation: 94,
-      rating: 4.7,
-      baseCostUsdc: 60.0,
-      successRate: 97.8,
-      wallet: 'PITCHD...WLLT4'
-    },
-    {
-      id: 'agent-testing-05',
-      name: 'Automated QA & Security Audit Agent',
-      capability: 'TESTING',
-      description: 'Runs automated integration test suites, lint checks, and security audits.',
-      health: 100,
-      load: '5%',
-      responseTimeMs: 720,
-      reputation: 99,
-      rating: 5.0,
-      baseCostUsdc: 30.0,
-      successRate: 100.0,
-      wallet: 'T3ST1N...WLLT5'
-    }
-  ];
+  const agents = agentsData || [];
 
   const filteredAgents = agents
-    .filter((a: any) => search === '' || a.name.toLowerCase().includes(search.toLowerCase()) || (a.capability || '').toLowerCase().includes(search.toLowerCase()))
+    .filter((a: any) => search === '' || (a.name || '').toLowerCase().includes(search.toLowerCase()) || (a.capability || '').toLowerCase().includes(search.toLowerCase()))
     .filter((a: any) => capabilityFilter === 'ALL' || a.capability === capabilityFilter || (a.capabilities && a.capabilities.includes(capabilityFilter)))
     .sort((a: any, b: any) => {
       if (sortBy === 'reputation') return (b.reputation || 95) - (a.reputation || 95);
@@ -162,70 +92,86 @@ export const Marketplace: React.FC = () => {
       </div>
 
       {/* Agent Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredAgents.map((agent: any, idx: number) => (
-          <motion.div
-            key={agent.id || idx}
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: idx * 0.05 }}
-            className="glass-panel p-5 border-slate-800/80 space-y-4 hover:border-violet-500/40 transition-all group"
-          >
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="text-base font-bold text-white group-hover:text-violet-300 transition-colors">
-                  {agent.name}
-                </h3>
-                <span className="inline-flex items-center space-x-1 text-[10px] font-mono font-medium text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20 mt-1">
-                  <Cpu className="w-3 h-3 text-indigo-400" />
-                  <span>{agent.capability || agent.capabilities?.[0] || 'GENERAL'}</span>
-                </span>
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="glass-panel p-5 border-slate-800 h-64 animate-pulse" />
+          ))}
+        </div>
+      ) : filteredAgents.length === 0 ? (
+        <div className="glass-panel p-12 text-center border-slate-800 space-y-3">
+          <Activity className="w-10 h-10 text-slate-600 mx-auto animate-pulse" />
+          <h3 className="text-sm font-bold text-slate-300 font-mono">No Agents Currently Registered</h3>
+          <p className="text-xs text-slate-500 max-w-sm mx-auto font-sans">
+            Connect an agent microservice or toggle Demo Mode to discover registered AI workers.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredAgents.map((agent: any, idx: number) => (
+            <motion.div
+              key={agent.id || idx}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: idx * 0.05 }}
+              className="glass-panel p-5 border-slate-800/80 space-y-4 hover:border-violet-500/40 transition-all group"
+            >
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="text-base font-bold text-white group-hover:text-violet-300 transition-colors">
+                    {agent.name}
+                  </h3>
+                  <span className="inline-flex items-center space-x-1 text-[10px] font-mono font-medium text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20 mt-1">
+                    <Cpu className="w-3 h-3 text-indigo-400" />
+                    <span>{agent.capability || agent.capabilities?.[0] || 'GENERAL'}</span>
+                  </span>
+                </div>
+
+                <div className="flex items-center space-x-1 text-xs font-mono text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                  <Star className="w-3.5 h-3.5 fill-amber-400" />
+                  <span>{agent.rating || 4.9}</span>
+                </div>
               </div>
 
-              <div className="flex items-center space-x-1 text-xs font-mono text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
-                <Star className="w-3.5 h-3.5 fill-amber-400" />
-                <span>{agent.rating || 4.9}</span>
-              </div>
-            </div>
+              <p className="text-xs text-slate-400 leading-relaxed font-sans">
+                {agent.description || 'Specialized AI agent microservice registered on AgentMesh network.'}
+              </p>
 
-            <p className="text-xs text-slate-400 leading-relaxed font-sans">
-              {agent.description || 'Specialized AI agent microservice registered on AgentMesh network.'}
-            </p>
+              {/* Metrics Breakdown */}
+              <div className="grid grid-cols-2 gap-2 text-xs font-mono pt-3 border-t border-slate-800/80">
+                <div className="glass-card p-2 border-slate-800">
+                  <span className="text-[10px] text-slate-500 block">Avg Response</span>
+                  <span className="text-slate-200 font-semibold">{agent.responseTimeMs || 850}ms</span>
+                </div>
+                <div className="glass-card p-2 border-slate-800">
+                  <span className="text-[10px] text-slate-500 block">Reputation Score</span>
+                  <span className="text-violet-400 font-semibold">{agent.reputation || 98} / 100</span>
+                </div>
+                <div className="glass-card p-2 border-slate-800">
+                  <span className="text-[10px] text-slate-500 block">Success Rate</span>
+                  <span className="text-emerald-400 font-semibold">{agent.successRate || 99.1}%</span>
+                </div>
+                <div className="glass-card p-2 border-slate-800">
+                  <span className="text-[10px] text-slate-500 block">Base Cost</span>
+                  <span className="text-emerald-400 font-semibold">${agent.baseCostUsdc || agent.basePrice || 45.0} USDC</span>
+                </div>
+              </div>
 
-            {/* Metrics Breakdown */}
-            <div className="grid grid-cols-2 gap-2 text-xs font-mono pt-3 border-t border-slate-800/80">
-              <div className="glass-card p-2 border-slate-800">
-                <span className="text-[10px] text-slate-500 block">Avg Response</span>
-                <span className="text-slate-200 font-semibold">{agent.responseTimeMs || 850}ms</span>
+              {/* Footer Wallet & Health */}
+              <div className="flex items-center justify-between pt-2 text-[11px] font-mono text-slate-500 border-t border-slate-800/60">
+                <div className="flex items-center space-x-1">
+                  <Wallet className="w-3 h-3 text-indigo-400" />
+                  <span>{agent.wallet || agent.walletAddress || 'WLLT...ADDR'}</span>
+                </div>
+                <div className="flex items-center space-x-1.5 text-emerald-400 font-semibold">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>{agent.status || 'HEALTHY'}</span>
+                </div>
               </div>
-              <div className="glass-card p-2 border-slate-800">
-                <span className="text-[10px] text-slate-500 block">Reputation Score</span>
-                <span className="text-violet-400 font-semibold">{agent.reputation || 98} / 100</span>
-              </div>
-              <div className="glass-card p-2 border-slate-800">
-                <span className="text-[10px] text-slate-500 block">Success Rate</span>
-                <span className="text-emerald-400 font-semibold">{agent.successRate || 99.1}%</span>
-              </div>
-              <div className="glass-card p-2 border-slate-800">
-                <span className="text-[10px] text-slate-500 block">Base Cost</span>
-                <span className="text-emerald-400 font-semibold">${agent.baseCostUsdc || agent.basePrice || 45.0} USDC</span>
-              </div>
-            </div>
-
-            {/* Footer Wallet & Health */}
-            <div className="flex items-center justify-between pt-2 text-[11px] font-mono text-slate-500 border-t border-slate-800/60">
-              <div className="flex items-center space-x-1">
-                <Wallet className="w-3 h-3 text-indigo-400" />
-                <span>{agent.wallet || agent.walletAddress || 'WLLT...ADDR'}</span>
-              </div>
-              <div className="flex items-center space-x-1.5 text-emerald-400 font-semibold">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>{agent.status || 'HEALTHY'}</span>
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

@@ -17,34 +17,24 @@ import { Link } from 'react-router-dom';
 import { useSystemMetrics, useSystemStatus, usePaymentsHistory, useAgentsList } from '../hooks/useDataHooks';
 
 export const Dashboard: React.FC = () => {
-  const { data: metricsData } = useSystemMetrics();
-  const { data: statusData } = useSystemStatus();
-  const { data: paymentsData } = usePaymentsHistory();
-  const { data: agentsData } = useAgentsList();
+  const { data: metricsData, isLoading: isMetricsLoading } = useSystemMetrics();
+  const { data: statusData, isLoading: isStatusLoading } = useSystemStatus();
+  const { data: paymentsData, isLoading: isPaymentsLoading } = usePaymentsHistory();
+  const { data: agentsData, isLoading: isAgentsLoading } = useAgentsList();
 
   const execMetrics = metricsData?.executionMetrics || {};
   const payMetrics = metricsData?.paymentMetrics || {};
 
-  const runningWorkflows = execMetrics.activeWorkflowsCount ?? 2;
-  const completedWorkflows = execMetrics.completedWorkflowsCount ?? 48;
-  const registeredAgents = metricsData?.registeredAgentsCount ?? (agentsData?.length || 5);
-  const revenueUsdc = payMetrics.totalRevenueUSDC ?? 245.50;
-  const avgExecDurationSec = ((execMetrics.averageExecutionDurationMs ?? 2847) / 1000).toFixed(2);
-  const successRate = 98.42;
-  const totalPayments = payMetrics.paidRequestsCount ?? 50;
+  const runningWorkflows = execMetrics.activeWorkflowsCount ?? 0;
+  const completedWorkflows = execMetrics.completedWorkflowsCount ?? 0;
+  const registeredAgents = metricsData?.registeredAgentsCount ?? (agentsData?.length || 0);
+  const revenueUsdc = payMetrics.totalRevenueUSDC ?? 0;
+  const avgExecDurationSec = ((execMetrics.averageExecutionDurationMs ?? 0) / 1000).toFixed(2);
+  const successRate = completedWorkflows > 0 ? ((completedWorkflows / (completedWorkflows + (execMetrics.failedWorkflowsCount || 0))) * 100).toFixed(1) : '100.0';
+  const totalPayments = payMetrics.paidRequestsCount ?? 0;
 
-  const recentPayments = paymentsData && paymentsData.length > 0 ? paymentsData.slice(0, 3) : [
-    { algorandTransactionId: 'TX-ALGO-TEST-998811', amount: '5.25', asset: 'USDC', verified: true, settlementTimestamp: Date.now() - 120000 },
-    { algorandTransactionId: 'TX-ALGO-TEST-887722', amount: '4.50', asset: 'USDC', verified: true, settlementTimestamp: Date.now() - 600000 }
-  ];
-
-  const agentsList = agentsData && agentsData.length > 0 ? agentsData : [
-    { name: 'Research & Market Intelligence Agent', capability: 'RESEARCH', status: 'HEALTHY', currentLoad: '12.4%', latency: '847ms' },
-    { name: 'Full-Stack Code Generation Agent', capability: 'FRONTEND', status: 'HEALTHY', currentLoad: '24.1%', latency: '1194ms' },
-    { name: 'Brand & Graphic Design Agent', capability: 'LOGO_DESIGN', status: 'HEALTHY', currentLoad: '8.5%', latency: '952ms' },
-    { name: 'Presentation & Pitch Deck Agent', capability: 'PITCH_DECK', status: 'HEALTHY', currentLoad: '15.2%', latency: '1103ms' },
-    { name: 'Automated QA & Security Audit Agent', capability: 'TESTING', status: 'HEALTHY', currentLoad: '5.0%', latency: '723ms' }
-  ];
+  const recentPayments = paymentsData || [];
+  const agentsList = agentsData || [];
 
   return (
     <div className="space-y-8 pb-12">
@@ -75,7 +65,7 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Top Metric Cards Grid with Micro Flashes */}
+      {/* Top Metric Cards Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: 'Running Workflows', value: runningWorkflows, icon: Play, color: 'text-violet-400', bg: 'bg-violet-500/10', border: 'border-violet-500/20' },
@@ -103,9 +93,13 @@ export const Dashboard: React.FC = () => {
               </div>
             </div>
             <div className="mt-3">
-              <span className="text-2xl font-bold text-white tracking-tight font-mono">
-                {m.value}
-              </span>
+              {isMetricsLoading ? (
+                <div className="h-8 w-24 bg-slate-800 animate-pulse rounded" />
+              ) : (
+                <span className="text-2xl font-bold text-white tracking-tight font-mono">
+                  {m.value}
+                </span>
+              )}
             </div>
           </motion.div>
         ))}
@@ -128,29 +122,22 @@ export const Dashboard: React.FC = () => {
             </div>
 
             <div className="space-y-3">
-              {[
-                { id: 'wf-plan-8f12a3', prompt: 'Create startup landing page with logo & QA', status: 'RUNNING', cost: 5.25, time: '1.24s' },
-                { id: 'wf-plan-7c91b4', prompt: 'Python FastAPI research & benchmarking agent', status: 'COMPLETED', cost: 4.50, time: '2.47s' }
-              ].map((wf) => (
-                <div key={wf.id} className="glass-card p-4 border-slate-800/80 flex items-center justify-between hover:bg-slate-800/40 transition-colors">
+              {isMetricsLoading ? (
+                <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800 animate-pulse h-20" />
+              ) : (
+                <div className="glass-card p-4 border-slate-800/80 flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className={`w-2.5 h-2.5 rounded-full ${wf.status === 'RUNNING' ? 'bg-violet-400 animate-ping' : 'bg-emerald-400'}`} />
+                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
                     <div>
-                      <h4 className="text-xs font-bold text-slate-100 font-sans">{wf.prompt}</h4>
-                      <p className="text-[11px] text-slate-400 font-mono mt-0.5">ID: {wf.id} • Duration: {wf.time}</p>
+                      <h4 className="text-xs font-bold text-slate-100 font-sans">System Ready for Workflow Execution</h4>
+                      <p className="text-[11px] text-slate-400 font-mono mt-0.5">Submit a prompt via Workflow Builder to dispatch tasks</p>
                     </div>
                   </div>
-
-                  <div className="flex items-center space-x-3">
-                    <span className="text-xs font-mono font-semibold text-emerald-400">${wf.cost.toFixed(2)} USDC</span>
-                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${
-                      wf.status === 'RUNNING' ? 'bg-violet-500/20 text-violet-300 border-violet-500/30' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-                    }`}>
-                      {wf.status}
-                    </span>
-                  </div>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
+                    IDLE
+                  </span>
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
@@ -168,23 +155,31 @@ export const Dashboard: React.FC = () => {
             </div>
 
             <div className="space-y-2 font-mono text-xs">
-              {recentPayments.map((p, idx) => (
-                <div key={idx} className="glass-card p-3 border-slate-800/60 flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <CreditCard className="w-4 h-4 text-violet-400" />
-                    <div>
-                      <span className="text-slate-200 font-semibold">{p.algorandTransactionId || p.txId || 'TX-ALGO-TEST-9988'}</span>
-                      <span className="text-slate-500 text-[10px] block">Verified</span>
+              {isPaymentsLoading ? (
+                <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800 animate-pulse h-16" />
+              ) : recentPayments.length === 0 ? (
+                <div className="p-4 text-center text-slate-500 text-xs font-sans">
+                  No payment settlements recorded yet. Execute a workflow to view settlements.
+                </div>
+              ) : (
+                recentPayments.map((p, idx) => (
+                  <div key={idx} className="glass-card p-3 border-slate-800/60 flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <CreditCard className="w-4 h-4 text-violet-400" />
+                      <div>
+                        <span className="text-slate-200 font-semibold">{p.algorandTransactionId || p.txId || 'TX-ALGO'}</span>
+                        <span className="text-slate-500 text-[10px] block">Verified</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <span className="text-emerald-400 font-bold">${p.amount} {p.asset || 'USDC'}</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        VERIFIED
+                      </span>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <span className="text-emerald-400 font-bold">${p.amount} {p.asset || 'USDC'}</span>
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                      VERIFIED
-                    </span>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -203,20 +198,28 @@ export const Dashboard: React.FC = () => {
             </div>
 
             <div className="space-y-3">
-              {agentsList.map((a: any, idx: number) => (
-                <div key={idx} className="glass-card p-3.5 border-slate-800/60 flex items-center justify-between">
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-100">{a.name}</h4>
-                    <span className="text-[10px] font-mono text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded">
-                      {a.capability || a.capabilities?.[0] || 'GENERAL'}
-                    </span>
-                  </div>
-                  <div className="text-right font-mono">
-                    <span className="text-xs text-emerald-400 font-bold">100%</span>
-                    <span className="text-[10px] text-slate-500 block">Load: {a.currentLoad || '12.4%'}</span>
-                  </div>
+              {isAgentsLoading ? (
+                <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800 animate-pulse h-32" />
+              ) : agentsList.length === 0 ? (
+                <div className="p-4 text-center text-slate-500 text-xs font-sans">
+                  No agents currently registered.
                 </div>
-              ))}
+              ) : (
+                agentsList.map((a: any, idx: number) => (
+                  <div key={idx} className="glass-card p-3.5 border-slate-800/60 flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-100">{a.name}</h4>
+                      <span className="text-[10px] font-mono text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded">
+                        {a.capability || a.capabilities?.[0] || 'GENERAL'}
+                      </span>
+                    </div>
+                    <div className="text-right font-mono">
+                      <span className="text-xs text-emerald-400 font-bold">100%</span>
+                      <span className="text-[10px] text-slate-500 block">Load: {a.currentLoad || '0%'}</span>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
