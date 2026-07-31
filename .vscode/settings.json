@@ -1,4 +1,10 @@
 {
+  "java.import.maven.enabled": true,
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "java.project.sourcePaths": [
+    "router-service/src/main/java",
+    "router-service/src/test/java"
+  ],
   "python.defaultInterpreterPath": "/opt/homebrew/bin/python3",
   "python.analysis.extraPaths": [
     "/opt/homebrew/lib/python3.14/site-packages",

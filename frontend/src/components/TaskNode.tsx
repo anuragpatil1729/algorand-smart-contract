@@ -5,9 +5,9 @@ import { motion } from 'framer-motion';
 
 export interface TaskNodeData {
   label: string;
-  capability: string;
+  capability?: string;
   agentName?: string;
-  status: 'PLANNING' | 'DISCOVERED' | 'QUOTED' | 'ASSIGNED' | 'WAITING' | 'RUNNING' | 'COMPLETED' | 'VERIFIED' | 'FAILED';
+  status?: 'PLANNING' | 'DISCOVERED' | 'QUOTED' | 'ASSIGNED' | 'WAITING' | 'RUNNING' | 'COMPLETED' | 'VERIFIED' | 'FAILED';
   price?: number;
   duration?: number;
   progress?: number;
@@ -15,7 +15,7 @@ export interface TaskNodeData {
 }
 
 export const TaskNode: React.FC<NodeProps<TaskNodeData>> = memo(({ data }) => {
-  const getStatusStyles = (status: TaskNodeData['status']) => {
+  const getStatusStyles = (status?: TaskNodeData['status']) => {
     switch (status) {
       case 'PLANNING':
         return {
@@ -80,6 +80,13 @@ export const TaskNode: React.FC<NodeProps<TaskNodeData>> = memo(({ data }) => {
           icon: <AlertCircle className="w-3.5 h-3.5 text-rose-400" />,
           dot: 'bg-rose-400'
         };
+      default:
+        return {
+          border: 'border-slate-800 bg-slate-950/80',
+          badge: 'bg-slate-800/80 text-slate-400 border-slate-700/60',
+          icon: <Clock className="w-3.5 h-3.5 text-slate-500" />,
+          dot: 'bg-slate-500'
+        };
     }
   };
 
@@ -87,9 +94,9 @@ export const TaskNode: React.FC<NodeProps<TaskNodeData>> = memo(({ data }) => {
 
   return (
     <motion.div
-      initial={{ scale: 0.8, opacity: 0 }}
+      initial={{ scale: 0.9, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.2 }}
       className={`w-64 p-3.5 rounded-2xl border backdrop-blur-xl transition-all duration-300 ${style.border}`}
     >
       <Handle type="target" position={Position.Top} className="!bg-slate-500 !w-3 !h-3 !border-2 !border-slate-900" />
@@ -102,19 +109,24 @@ export const TaskNode: React.FC<NodeProps<TaskNodeData>> = memo(({ data }) => {
             {data.label}
           </h4>
         </div>
-        <div className={`flex items-center space-x-1 text-[10px] font-mono px-2 py-0.5 rounded-full border ${style.badge}`}>
-          {style.icon}
-          <span className="font-medium">{data.status}</span>
-        </div>
+        {data.status && (
+          <div className={`flex items-center space-x-1 text-[10px] font-mono px-2 py-0.5 rounded-full border ${style.badge}`}>
+            {style.icon}
+            <span className="font-medium">{data.status}</span>
+          </div>
+        )}
       </div>
 
       {/* Capability Pill */}
       <div className="mb-2 flex items-center justify-between">
-        <span className="inline-flex items-center space-x-1 text-[10px] font-mono font-medium text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20">
-          <Cpu className="w-3 h-3 text-indigo-400" />
-          <span>{data.capability}</span>
-        </span>
-        {data.confidenceScore && (
+        {data.capability ? (
+          <span className="inline-flex items-center space-x-1 text-[10px] font-mono font-medium text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20">
+            <Cpu className="w-3 h-3 text-indigo-400" />
+            <span>{data.capability}</span>
+          </span>
+        ) : <div />}
+        
+        {data.confidenceScore !== undefined && (
           <span className="text-[10px] font-mono text-emerald-400 font-semibold">
             {(data.confidenceScore * 100).toFixed(0)}% Conf
           </span>
@@ -129,16 +141,18 @@ export const TaskNode: React.FC<NodeProps<TaskNodeData>> = memo(({ data }) => {
       )}
 
       {/* Assigned Agent & Price */}
-      <div className="flex items-center justify-between text-[11px] pt-2 border-t border-slate-800/60 font-mono text-slate-400">
-        <span className="truncate max-w-[130px]" title={data.agentName || 'Auto-assigning...'}>
-          {data.agentName || 'Auto-assigning...'}
-        </span>
-        {data.price !== undefined && (
-          <span className="font-semibold text-emerald-400">
-            ${data.price.toFixed(2)} USDC
+      {(data.agentName || data.price !== undefined) && (
+        <div className="flex items-center justify-between text-[11px] pt-2 border-t border-slate-800/60 font-mono text-slate-400">
+          <span className="truncate max-w-[130px]" title={data.agentName || ''}>
+            {data.agentName || ''}
           </span>
-        )}
-      </div>
+          {data.price !== undefined && (
+            <span className="font-semibold text-emerald-400">
+              ${data.price.toFixed(2)} USDC
+            </span>
+          )}
+        </div>
+      )}
 
       <Handle type="source" position={Position.Bottom} className="!bg-violet-500 !w-3 !h-3 !border-2 !border-slate-900" />
     </motion.div>

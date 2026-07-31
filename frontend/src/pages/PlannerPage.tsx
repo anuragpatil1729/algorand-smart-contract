@@ -28,14 +28,11 @@ export const PlannerPage: React.FC = () => {
   const [strategy, setStrategy] = useState('BALANCED');
   const [maxConcurrency, setMaxConcurrency] = useState(5);
   
-  const [currentStageText, setCurrentStageText] = useState<string | null>(null);
-  const [liveLogLines, setLiveLogLines] = useState<string[]>([]);
-  const [liveQuotes, setLiveQuotes] = useState<Array<{ agent: string; price: number; capability: string }>>([]);
   const [executionResult, setExecutionResult] = useState<any>(null);
 
   const runPipelineMutation = useRunPipelineMutation();
 
-  // Pure Event-Driven Graph State: Initially empty []
+  // Pure Backend Event-Driven Graph State: Initially empty []
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
@@ -52,9 +49,6 @@ export const PlannerPage: React.FC = () => {
     setNodes([]);
     setEdges([]);
     setExecutionResult(null);
-    setCurrentStageText('Phase 1/6: Decomposing prompt into DAG tasks...');
-    setLiveLogLines([`[${new Date().toLocaleTimeString()}] Planner initialized for prompt`]);
-    setLiveQuotes([]);
 
     runPipelineMutation.mutate(
       { prompt, strategy, maxConcurrency },
@@ -65,68 +59,25 @@ export const PlannerPage: React.FC = () => {
           const taskList = data?.plannerOutput?.taskList || [];
           const assignments = data?.selectedAgents || [];
 
-          // 1. Stage 1: Appending Discovered Planning Nodes
-          setTimeout(() => {
-            setCurrentStageText('Phase 2/6: Resolving capability requirements across agent registry...');
-            const initialPlanningNodes = taskList.map((task: any, idx: number) => ({
-              id: task.id || `task-${idx}`,
-              type: 'taskNode',
-              position: { x: 150 + (idx % 2) * 220, y: 40 + Math.floor(idx / 2) * 160 },
-              data: {
-                label: task.description || task.name || task.id,
-                capability: task.requiredCapability || 'GENERAL',
-                status: 'DISCOVERED'
-              }
-            }));
-            setNodes(initialPlanningNodes);
-          }, 400);
+          // Render nodes directly from backend response without fallback defaults
+          if (taskList.length > 0) {
+            const dynamicNodes = taskList.map((task: any, idx: number) => {
+              const assign = assignments.find((a: any) => a.taskId === task.id);
+              return {
+                id: task.id || `task-${idx}`,
+                type: 'taskNode',
+                position: { x: 150 + (idx % 2) * 220, y: 40 + Math.floor(idx / 2) * 160 },
+                data: {
+                  label: task.description || task.name || task.id,
+                  capability: task.requiredCapability,
+                  agentName: assign?.selectedAgentName || assign?.selectedAgentId,
+                  status: data?.result?.status === 'COMPLETED' ? 'VERIFIED' : 'RUNNING',
+                  price: assign?.quotedPrice || task.estimatedCost,
+                  confidenceScore: assign?.confidenceScore
+                }
+              };
+            });
 
-          // 2. Stage 2: Streaming Quotes & Prices onto Nodes
-          setTimeout(() => {
-            setCurrentStageText('Phase 3/6: Streaming quotes from candidate AI microservices...');
-            if (assignments.length > 0) {
-              setLiveQuotes(assignments.map((a: any) => ({
-                agent: a.selectedAgentName || a.agentId,
-                price: a.quotedPrice || 45.0,
-                capability: a.requiredCapability || 'GENERAL'
-              })));
-            }
-
-            setNodes((prevNodes: any[]) =>
-              prevNodes.map((node: any) => {
-                const assign = assignments.find((a: any) => a.taskId === node.id);
-                return {
-                  ...node,
-                  data: {
-                    ...node.data,
-                    status: 'QUOTED',
-                    price: assign?.quotedPrice || 45.0
-                  }
-                };
-              })
-            );
-          }, 900);
-
-          // 3. Stage 3: Agent Selection & Dependency Edges Appearing
-          setTimeout(() => {
-            setCurrentStageText('Phase 4/6: Multi-criteria agent scoring & assignment optimization...');
-            
-            setNodes((prevNodes: any[]) =>
-              prevNodes.map((node: any) => {
-                const assign = assignments.find((a: any) => a.taskId === node.id);
-                return {
-                  ...node,
-                  data: {
-                    ...node.data,
-                    status: 'ASSIGNED',
-                    agentName: assign?.selectedAgentName || 'Assigned Agent',
-                    confidenceScore: 0.98
-                  }
-                };
-              })
-            );
-
-            // Add dependency edges
             const dynamicEdges: any[] = [];
             taskList.forEach((task: any) => {
               if (task.dependencies) {
@@ -136,46 +87,21 @@ export const PlannerPage: React.FC = () => {
                     source: depId,
                     target: task.id,
                     animated: true,
-                    style: { stroke: '#8b5cf6', strokeWidth: 2 }
+                    style: { stroke: '#10b981', strokeWidth: 2 }
                   });
                 });
               }
             });
+
+            setNodes(dynamicNodes);
             setEdges(dynamicEdges);
-          }, 1400);
-
-          // 4. Stage 4: x402 Facilitator Verification
-          setTimeout(() => {
-            setCurrentStageText('Phase 5/6: Issuing x402 Challenge & verifying Plausible Facilitator proof...');
-          }, 1900);
-
-          // 5. Stage 5: Running & Verified Completion
-          setTimeout(() => {
-            setCurrentStageText('Phase 6/6: Parallel DAG execution & x402 verification completed!');
-            
-            setNodes((prevNodes: any[]) =>
-              prevNodes.map((node: any) => ({
-                ...node,
-                data: {
-                  ...node.data,
-                  status: 'VERIFIED'
-                }
-              }))
-            );
-
-            setEdges((prevEdges: any[]) =>
-              prevEdges.map((e: any) => ({
-                ...e,
-                style: { stroke: '#10b981', strokeWidth: 2 }
-              }))
-            );
-
-            setCurrentStageText(null);
-          }, 2500);
+          }
         }
       }
     );
   };
+
+  const selectedQuotes = executionResult?.selectedAgents || [];
 
   return (
     <div className="space-y-6 pb-12">
@@ -187,7 +113,7 @@ export const PlannerPage: React.FC = () => {
               Workflow Builder & Live DAG
             </h1>
             <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-violet-500 to-indigo-500 text-white font-mono text-xs font-bold shadow-md shadow-violet-500/20">
-              STREAMING CANVAS
+              PURE BACKEND DATA
             </span>
           </div>
           <p className="text-sm text-slate-400 mt-1 font-sans">
@@ -251,21 +177,13 @@ export const PlannerPage: React.FC = () => {
               </select>
             </div>
 
-            {/* Stage Progress Indicator */}
-            {currentStageText && (
-              <div className="p-3 rounded-xl bg-violet-500/10 border border-violet-500/30 text-violet-300 text-xs font-mono flex items-center space-x-2 animate-pulse">
-                <RefreshCw className="w-4 h-4 text-violet-400 animate-spin" />
-                <span>{currentStageText}</span>
-              </div>
-            )}
-
             {/* Execute Button */}
             <button
               onClick={handleRunPipeline}
-              disabled={runPipelineMutation.isPending || !prompt.trim() || !!currentStageText}
+              disabled={runPipelineMutation.isPending || !prompt.trim()}
               className="w-full glass-button py-3.5 flex items-center justify-center space-x-2 text-sm font-bold tracking-wide shadow-violet-600/40 disabled:opacity-50"
             >
-              {runPipelineMutation.isPending || currentStageText ? (
+              {runPipelineMutation.isPending ? (
                 <>
                   <RefreshCw className="w-4 h-4 text-white animate-spin" />
                   <span>Orchestrating Pipeline...</span>
@@ -279,18 +197,20 @@ export const PlannerPage: React.FC = () => {
             </button>
           </div>
 
-          {/* Live Quote Streaming Box */}
-          {liveQuotes.length > 0 && (
+          {/* Live Quote Stream Box from Backend */}
+          {selectedQuotes.length > 0 && (
             <div className="glass-panel p-4 border-slate-800/80 space-y-2">
               <h3 className="text-xs font-bold text-white font-mono flex items-center space-x-2">
                 <DollarSign className="w-4 h-4 text-emerald-400" />
-                <span>Live Quote Stream (Bidding Microservices)</span>
+                <span>Backend Agent Quotes & Assignments</span>
               </h3>
               <div className="space-y-1.5 font-mono text-xs">
-                {liveQuotes.map((q, idx) => (
+                {selectedQuotes.map((q: any, idx: number) => (
                   <div key={idx} className="glass-card p-2 border-slate-800 flex items-center justify-between">
-                    <span className="text-slate-300 text-[11px]">{q.agent}</span>
-                    <span className="text-emerald-400 font-bold text-[11px]">${q.price.toFixed(2)} USDC</span>
+                    <span className="text-slate-300 text-[11px]">{q.selectedAgentName || q.selectedAgentId}</span>
+                    <span className="text-emerald-400 font-bold text-[11px]">
+                      {q.quotedPrice ? `$${q.quotedPrice.toFixed(2)} USDC` : ''}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -303,13 +223,15 @@ export const PlannerPage: React.FC = () => {
               <div className="glass-card p-3 border-slate-800">
                 <span className="text-[10px] text-slate-400 uppercase block">Total Quoted Cost</span>
                 <span className="text-lg font-bold text-emerald-400">
-                  ${(executionResult.plannerOutput?.totalEstimatedCost || 0).toFixed(2)} USDC
+                  {executionResult.plannerOutput?.totalEstimatedCost
+                    ? `$${executionResult.plannerOutput.totalEstimatedCost.toFixed(2)} USDC`
+                    : 'N/A'}
                 </span>
               </div>
               <div className="glass-card p-3 border-slate-800">
                 <span className="text-[10px] text-slate-400 uppercase block">Execution Duration</span>
                 <span className="text-lg font-bold text-amber-400">
-                  {executionResult.executionTimeMs || 0}ms
+                  {executionResult.executionTimeMs ? `${executionResult.executionTimeMs}ms` : 'N/A'}
                 </span>
               </div>
             </div>
@@ -322,10 +244,10 @@ export const PlannerPage: React.FC = () => {
             <div className="flex items-center justify-between mb-3 px-2">
               <div className="flex items-center space-x-2">
                 <Layers className="w-5 h-5 text-indigo-400" />
-                <h3 className="text-sm font-bold text-white">Live Streaming Execution DAG Canvas</h3>
+                <h3 className="text-sm font-bold text-white">Execution DAG Canvas</h3>
               </div>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-violet-500/10 text-violet-300 border border-violet-500/20">
-                {nodes.length > 0 ? `${nodes.length} STREAMED TASKS` : 'CANVAS EMPTY'}
+                {nodes.length > 0 ? `${nodes.length} BACKEND TASKS` : 'CANVAS EMPTY'}
               </span>
             </div>
 
@@ -335,7 +257,7 @@ export const PlannerPage: React.FC = () => {
                   <Activity className="w-10 h-10 text-slate-600 animate-pulse" />
                   <h4 className="text-sm font-bold text-slate-300 font-mono">No Workflow Generated Yet</h4>
                   <p className="text-xs text-slate-500 max-w-sm font-sans">
-                    Submit a prompt on the left to watch task nodes, quote badges, and dependency edges stream live onto the canvas.
+                    Submit a prompt on the left to execute the pipeline and render the backend DAG graph.
                   </p>
                 </div>
               ) : (
