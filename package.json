@@ -1,0 +1,14 @@
+{
+  "name": "agentmesh",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "AgentMesh - Multi-Agent AI Service Platform with Algorand Escrow Settlement",
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "dev:ui": "npm --prefix frontend run dev:ui",
+    "dev:cli": "npm --prefix frontend run cli",
+    "cli": "npm --prefix frontend run cli",
+    "build": "npm --prefix frontend run build"
+  }
+}

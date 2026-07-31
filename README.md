@@ -165,13 +165,30 @@ pip install -r requirements.txt
 python main.py
 ```
 
-### Run the frontend standalone
+### Run the frontend & CLI interface
 
+AgentMesh supports two flexible execution modes:
+
+#### 1. Web UI Mode (Browser Interface at http://localhost:3000)
 ```bash
-cd frontend
-npm install
 npm run dev
+# or
+npm run dev:ui
+# or from frontend folder:
+cd frontend && npm run dev
 ```
+
+#### 2. CLI Mode (Terminal-only interactive interface without UI)
+```bash
+npm run cli
+# or
+npm run dev -- --cli
+# or via script:
+./scripts/cli.sh
+# or from frontend folder:
+cd frontend && npm run cli
+```
+In CLI mode, you will be prompted to enter your prompt or pick from presets, select a routing strategy, and view real-time prompt decomposition, agent discovery, quote price estimation, x402 Algorand escrow settlement, task execution, and atomic payout receipts directly in your terminal.
 
 ---
 
