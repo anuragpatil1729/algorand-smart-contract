@@ -76,7 +76,7 @@ public class Agent {
     @Column(name = "registration_time")
     private LocalDateTime registrationTime;
 
-    @Column(nullable = false, length = 1000)
+    @Column(name = "supported_capabilities", nullable = false, length = 1000)
     private String capabilities;
 
     @Column(name = "created_at")

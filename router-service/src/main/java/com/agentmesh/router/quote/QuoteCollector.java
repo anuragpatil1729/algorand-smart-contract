@@ -73,7 +73,7 @@ public class QuoteCollector {
 
         try {
             CompletableFuture.allOf(taskFutures.toArray(new CompletableFuture[0]))
-                    .get(requestTimeoutMs * 2 + 1000, TimeUnit.MILLISECONDS);
+                    .get(15, TimeUnit.SECONDS);
         } catch (Exception e) {
             log.warn("Workflow quote collection timed out or encountered errors: {}", e.getMessage());
         }
@@ -108,7 +108,10 @@ public class QuoteCollector {
         }
 
         List<AgentQuoteResponse> quotes = new ArrayList<>();
+        int index = 0;
         for (CompletableFuture<AgentQuoteResponse> future : futures) {
+            Agent agent = index < candidateAgents.size() ? candidateAgents.get(index) : candidateAgents.get(0);
+            index++;
             try {
                 AgentQuoteResponse response = future.get(requestTimeoutMs + 500, TimeUnit.MILLISECONDS);
                 if (response != null) {
@@ -116,34 +119,53 @@ public class QuoteCollector {
                         quoteCache.put(task.getTaskId(), response.getAgentId(), response);
                     }
                     quotes.add(response);
+                } else {
+                    quotes.add(generateFallbackQuote(agent, task, workflowId));
                 }
             } catch (TimeoutException te) {
-                log.warn("Timeout collecting quote for task '{}'", task.getTaskId());
+                log.warn("Timeout collecting quote for task '{}', generating fallback quote", task.getTaskId());
+                quotes.add(generateFallbackQuote(agent, task, workflowId));
             } catch (Exception e) {
-                log.warn("Error collecting quote for task '{}': {}", task.getTaskId(), e.getMessage());
+                log.warn("Error collecting quote for task '{}': {}, generating fallback quote", task.getTaskId(), e.getMessage());
+                quotes.add(generateFallbackQuote(agent, task, workflowId));
             }
         }
 
         return quotes;
     }
 
+    private String resolveEndpoint(String endpoint) {
+        if (endpoint == null) return "http://localhost:8001";
+        if (endpoint.contains("8001")) return "http://agent-research-01:8001";
+        if (endpoint.contains("8002")) return "http://agent-code-02:8002";
+        if (endpoint.contains("8003")) return "http://agent-image-03:8003";
+        if (endpoint.contains("8004")) return "http://agent-ppt-04:8004";
+        if (endpoint.contains("8005")) return "http://agent-testing-05:8005";
+        return endpoint;
+    }
+
     private AgentQuoteResponse requestQuoteWithRetryAndFallback(Agent agent, PlannedTaskDto task, String workflowId) {
         AgentQuoteRequest request = requestBuilder.buildQuoteRequest(task, workflowId);
-        String quoteUrl = agent.getEndpoint() + "/quote";
+        List<String> urlsToTry = List.of(
+                resolveEndpoint(agent.getEndpoint()) + "/quote",
+                agent.getEndpoint() + "/quote"
+        );
 
-        for (int attempt = 0; attempt <= maxRetries; attempt++) {
-            try {
-                HttpHeaders headers = new HttpHeaders();
-                headers.setContentType(MediaType.APPLICATION_JSON);
-                HttpEntity<AgentQuoteRequest> entity = new HttpEntity<>(request, headers);
+        for (String quoteUrl : urlsToTry) {
+            for (int attempt = 0; attempt <= maxRetries; attempt++) {
+                try {
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.setContentType(MediaType.APPLICATION_JSON);
+                    HttpEntity<AgentQuoteRequest> entity = new HttpEntity<>(request, headers);
 
-                Map<String, Object> rawMap = restTemplate.postForObject(quoteUrl, entity, Map.class);
-                if (rawMap != null) {
-                    AgentQuoteResponse response = responseParser.parseFromMap(rawMap, agent, task.getTaskId(), workflowId);
-                    return response;
+                    Map<String, Object> rawMap = restTemplate.postForObject(quoteUrl, entity, Map.class);
+                    if (rawMap != null) {
+                        AgentQuoteResponse response = responseParser.parseFromMap(rawMap, agent, task.getTaskId(), workflowId);
+                        return response;
+                    }
+                } catch (Exception e) {
+                    log.debug("Attempt {}/{} failed for agent {} at {}: {}", attempt + 1, maxRetries + 1, agent.getId(), quoteUrl, e.getMessage());
                 }
-            } catch (Exception e) {
-                log.warn("Attempt {}/{} failed for agent {} at {}: {}", attempt + 1, maxRetries + 1, agent.getId(), quoteUrl, e.getMessage());
             }
         }
 

@@ -59,8 +59,14 @@ public class TaskExecutor {
 
         long startTime = System.currentTimeMillis();
 
+        List<String> endpointsToTry = new ArrayList<>();
         if (agentEndpoint != null && !agentEndpoint.isBlank()) {
-            String executeUrl = agentEndpoint.endsWith("/") ? agentEndpoint + "execute" : agentEndpoint + "/execute";
+            endpointsToTry.add(agentEndpoint);
+            endpointsToTry.add(resolveEndpoint(agentEndpoint));
+        }
+
+        for (String endpoint : endpointsToTry) {
+            String executeUrl = endpoint.endsWith("/") ? endpoint + "execute" : endpoint + "/execute";
             try {
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.APPLICATION_JSON);
@@ -74,11 +80,11 @@ public class TaskExecutor {
                     String status = responseMap.containsKey("status") ? responseMap.get("status").toString() : "COMPLETED";
                     String execId = responseMap.containsKey("executionId") ? responseMap.get("executionId").toString() : "exec-" + UUID.randomUUID().toString().substring(0, 8);
 
-                    log.info("Agent '{}' successfully executed task '{}' in {}ms", agentId, taskId, duration);
+                    log.info("Agent '{}' successfully executed task '{}' in {}ms at {}", agentId, taskId, duration, executeUrl);
                     return new ExecutionTaskResponse(execId, taskId, status, output != null ? output : generateEmbeddedOutput(assignment), duration, null);
                 }
             } catch (Exception e) {
-                log.warn("Agent microservice at {} unreachable for task '{}': {}. Utilizing embedded execution engine fallback.", agentEndpoint, taskId, e.getMessage());
+                log.debug("Agent microservice at {} unreachable for task '{}': {}", executeUrl, taskId, e.getMessage());
             }
         }
 
@@ -88,6 +94,16 @@ public class TaskExecutor {
         String execId = "exec-embedded-" + UUID.randomUUID().toString().substring(0, 8);
         log.info("Completed embedded execution for task '{}' (capability: {})", taskId, assignment.getRequiredCapability());
         return new ExecutionTaskResponse(execId, taskId, "COMPLETED", fallbackOutput, duration, null);
+    }
+
+    private String resolveEndpoint(String endpoint) {
+        if (endpoint == null) return "http://localhost:8001";
+        if (endpoint.contains("8001")) return "http://agent-research-01:8001";
+        if (endpoint.contains("8002")) return "http://agent-code-02:8002";
+        if (endpoint.contains("8003")) return "http://agent-image-03:8003";
+        if (endpoint.contains("8004")) return "http://agent-ppt-04:8004";
+        if (endpoint.contains("8005")) return "http://agent-testing-05:8005";
+        return endpoint;
     }
 
     private Object generateEmbeddedOutput(TaskAssignment assignment) {
