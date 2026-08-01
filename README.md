@@ -1,18 +1,29 @@
 # AgentMesh
 
-**AgentMesh** is a multi-agent AI service platform that discovers, prices, routes, and pays specialized AI agents for sub-tasks of a larger workflow — with payouts settled on **Algorand** through an atomic escrow smart contract.
+**AgentMesh** is a pay-per-use, multi-agent AI orchestration platform. It takes a single natural-language prompt, breaks it into sub-tasks, lets specialized AI microservices bid on those tasks, settles payment on **Algorand Testnet** using the **x402 protocol**, executes the winning agents in parallel, and releases funds atomically through a **PyTeal escrow smart contract**.
 
-A user submits a prompt → the router breaks it into tasks → specialized agents (research, coding, image, presentation, testing) bid on those tasks → the best-scoring quotes are selected → the workflow executes → and on completion, an Algorand atomic transaction group releases funds from escrow to every agent's wallet in a single indivisible transfer.
+> Ask for *"a market intelligence report + a landing page + a pitch deck + automated QA"* and AgentMesh decomposes that into tasks, shops them out to the Research, Coding, Image, PPT, and Testing agents, collects competitive quotes, verifies an on-chain USDC payment, runs everything, and pays every agent out of a single atomic Algorand transaction group.
 
 ---
 
-## 🏗️ Architecture
+## How it works
+
+1. **Decompose** — a prompt hits `POST /api/demo/run` (or `/api/workflows/execute`) and the router splits it into a task DAG.
+2. **Discover & quote** — registered agents are discovered and asked for a price, confidence, and time estimate for each task.
+3. **Score & assign** — a multi-criteria scoring engine picks the best quote per task and builds an assignment plan.
+4. **Pay (x402)** — protected endpoints return an HTTP 402 challenge; the client settles in USDC on Algorand Testnet, and the proof is verified against the official x402 Facilitator (`https://facilitator.goplausible.xyz`).
+5. **Execute** — the winning agents run their tasks in parallel following the DAG, streaming status over WebSocket.
+6. **Settle** — on completion, an atomic Algorand transaction group (size ≥ 2) releases funds from escrow to the router's fee address and every contributing agent's wallet in one indivisible transfer, and a signed receipt is generated.
+
+---
+
+## Architecture
 
 ```text
                         ┌───────────────────────┐
-                        │       Frontend        │
-                        │   React + TypeScript  │
-                        │   (Vite, Tailwind)     │
+                        │        Frontend        │
+                        │   React + TypeScript   │
+                        │    (Vite, Tailwind)    │
                         └───────────┬───────────┘
                                     │ REST / WebSocket
                                     ▼
@@ -20,17 +31,17 @@ A user submits a prompt → the router breaks it into tasks → specialized agen
                         │     Router Service     │
                         │   Spring Boot (Java)   │
                         │  Discovery · Quoting ·  │
-                        │  Workflow Orchestration │
-                        │      · Payments         │
+                        │ Workflow Orchestration │
+                        │       · Payments        │
                         └───┬───────────────┬────┘
                             │               │
                  ┌──────────┘               └──────────┐
-                 ▼                                     ▼
+                 ▼                                      ▼
         ┌──────────────────┐                 ┌───────────────────────┐
-        │ PostgreSQL + Redis│                 │  Algorand Smart       │
-        │  (state, quotes,  │                 │  Contract (PyTeal)    │
-        │  workflows, tasks)│                 │  Escrow + Atomic      │
-        └──────────────────┘                 │  Agent Payouts        │
+        │ PostgreSQL + Redis│                 │   Algorand Smart      │
+        │  (state, quotes,  │                 │   Contract (PyTeal)   │
+        │  workflows, tasks)│                 │  Escrow + Atomic       │
+        └──────────────────┘                 │  Agent Payouts         │
                                               └───────────────────────┘
                             │
         ┌───────────┬───────────┬───────────┬────────────┐
@@ -42,71 +53,76 @@ A user submits a prompt → the router breaks it into tasks → specialized agen
    └─────────┘ └──────────┘ └─────────┘ └──────────┘ └───────────┘
 ```
 
-Each agent shares a common Python framework (`agents/shared`) exposing a standard REST contract (`/health`, `/capabilities`, `/quote`, `/execute`, `/status/{taskId}`), so new agent types can be added by subclassing `BaseAgent`.
+All five agents share a common Python framework (`agents/shared`) that exposes a standard REST contract — `/health`, `/capabilities`, `/quote`, `/execute`, `/status/{taskId}` — so new agent types can be added by subclassing `BaseAgent`.
+
+For the full component and sequence diagrams, see [`docs/judge-walkthrough.md`](./docs/judge-walkthrough.md).
 
 ---
 
-## ✨ Key Features
+## Key features
 
-- **Workflow decomposition & routing** — the router service splits an incoming prompt into tasks and dispatches them to registered agents via a DAG execution graph.
-- **Competitive quoting & multi-criteria scoring** — agents return price, confidence, and time estimates; the scoring engine evaluates quotes across 6 weighted parameters.
-- **x402 Protocol Algorand payments** — paid API execution endpoints (`/api/execution/start`, `/api/workflows/execute`) enforce HTTP 402 Payment Required challenges, verified via the official x402 Facilitator (`https://facilitator.goplausible.xyz`) and settled on Algorand Testnet using USDC ASA (`31566704`).
-- **Atomic smart contract payouts** — funds are locked in a PyTeal-based escrow contract and released to agents via atomic transaction groups (size ≥ 2).
-- **One-click demo pipeline (`POST /api/demo/run`)** — unified `WorkflowOrchestrator` driving prompt -> planning -> discovery -> quotes -> selection -> payment verification -> execution -> receipt generation.
-- **Real-time Mission Control Dashboard** — React + TypeScript dashboard with dark glassmorphism, Framer Motion animations, animated React Flow DAG canvas, GitHub Actions style timeline, Recharts telemetry, and WebSocket cache synchronization.
+- **Prompt decomposition & DAG routing** — the router breaks an incoming prompt into a task graph and dispatches it to registered agents.
+- **Competitive quoting & multi-criteria scoring** — agents return price, confidence, and time; a scoring engine ranks quotes across six weighted parameters.
+- **x402 payments on Algorand** — paid endpoints (`/api/execution/start`, `/api/workflows/execute`) enforce HTTP 402 challenges, verified through the official x402 Facilitator and settled on Algorand Testnet in USDC ASA (`31566704`).
+- **Atomic escrow payouts** — funds are locked in a PyTeal escrow contract and only ever released via an atomic transaction group, so no single payout can be executed in isolation.
+- **One-click demo pipeline** — `POST /api/demo/run` drives the full flow end-to-end: plan → discover → quote → select → pay → execute → receipt.
+- **Real-time Mission Control dashboard** — a React + TypeScript UI with an animated React Flow DAG canvas, a build-timeline view, Recharts telemetry, and live WebSocket updates.
+- **CLI mode** — the same orchestration flow is available as a terminal-only interactive experience, no browser required.
 
 ---
 
-## 🛠️ Tech Stack
+## Tech stack
 
 | Layer | Technology |
 | --- | --- |
-| Frontend | React 18, TypeScript, Vite, Tailwind CSS, React Query, React Flow, Recharts |
-| Router / Orchestration | Java 17+, Spring Boot 3 (Web, Data JPA, Validation, Actuator, WebSocket), springdoc-openapi |
+| Frontend | React 18, TypeScript, Vite, Tailwind CSS, React Query, React Flow, Recharts, Framer Motion |
+| Router / orchestration | Java 17+, Spring Boot 3 (Web, Data JPA, Validation, Actuator, WebSocket), springdoc-openapi |
 | Agents | Python, FastAPI, Pydantic v2, Uvicorn, Loguru |
 | Data | PostgreSQL 15, Redis 7 |
-| Blockchain | Algorand, PyTeal, `py-algorand-sdk` |
+| Blockchain | Algorand, PyTeal, `py-algorand-sdk`, x402 (Algorand/AVM variant) |
 | Infra | Docker, Docker Compose, Kubernetes manifests |
 
 ---
 
-## 📂 Project Structure
+## Project structure
 
 ```text
-algorand-smart-contract/
+agentmesh/
 ├── agents/                  # Python FastAPI agents + shared framework
-│   ├── shared/              # BaseAgent, config, models, services
+│   ├── shared/               # BaseAgent, config, models, services
 │   ├── research-agent/
 │   ├── coding-agent/
 │   ├── image-agent/
 │   ├── ppt-agent/
 │   └── testing-agent/
-├── router-service/          # Spring Boot orchestration & payments API
-├── smart-contract/          # PyTeal escrow contract + Algorand SDK deploy script
-│   ├── contracts/           # escrow.py / compiled escrow.teal
-│   └── scripts/             # deploy_escrow.py (atomic group builder)
-├── frontend/                # React + TypeScript dashboard
+├── router-service/           # Spring Boot orchestration & payments API
+├── smart-contract/           # PyTeal escrow contract + Algorand SDK deploy script
+│   ├── contracts/             # escrow.py / compiled escrow.teal
+│   └── scripts/                # deploy_escrow.py (atomic group builder)
+├── frontend/                 # React + TypeScript dashboard & CLI
 ├── database/
-│   ├── schema/              # PostgreSQL schema (agents, workflows, tasks, quotes, payments)
-│   └── seeds/                # Seed data for agents
+│   ├── schema/                 # PostgreSQL schema (agents, workflows, tasks, quotes, payments, transactions...)
+│   └── seeds/                   # Seed data for agents
 ├── docs/
-│   ├── api/                 # OpenAPI spec
-│   └── architecture/        # System design notes
-├── infrastructure/          # Docker & Kubernetes configs
-├── scripts/                 # run / seed / build / stop helper scripts
-└── docker-compose.yml       # Full local stack
+│   ├── api/                     # OpenAPI spec
+│   ├── architecture/            # System design notes
+│   ├── judge-walkthrough.md     # Full architecture + sequence diagrams
+│   └── x402-integration-guide.md # x402 payment flow & business model
+├── infrastructure/            # Docker & Kubernetes configs
+├── scripts/                   # run / seed / build / stop / CLI helper scripts
+└── docker-compose.yml         # Full local stack
 ```
 
 ---
 
-## 🔗 Algorand Escrow Contract
+## Algorand escrow contract
 
-The escrow contract (`smart-contract/contracts/escrow.py`, compiled to `escrow.teal`, PyTeal v6, `Mode.Signature`) enforces a simple but critical rule: payments may only leave the escrow address as part of an **atomic transaction group of size ≥ 2**, preventing any single payout from being executed in isolation.
+`smart-contract/contracts/escrow.py` (PyTeal, `Mode.Signature`, compiled to `escrow.teal`) enforces one rule: funds may leave the escrow address **only** as part of an atomic transaction group of size ≥ 2. That makes it structurally impossible for a single payout to be pushed through on its own.
 
 `smart-contract/scripts/deploy_escrow.py` uses `py-algorand-sdk` to:
-1. Build a protocol-fee transaction (router's cut) plus one payment transaction per agent.
-2. Compute the Algorand atomic group ID for the full transaction set.
-3. Return transaction receipts for the router service / frontend to display.
+1. Build a protocol-fee transaction (the router's 10% cut) plus one payment transaction per contributing agent.
+2. Group all of them into a single Algorand atomic transaction group and compute the group ID.
+3. Submit the group and return transaction receipts for the router service / frontend to display.
 
 Contract dependencies:
 ```text
@@ -116,11 +132,23 @@ py-algorand-sdk>=2.0.0
 
 ---
 
-## 🚀 Getting Started
+## Payments (x402 on Algorand)
+
+Every protected execution endpoint follows the standard 4-step x402 challenge/settlement sequence, using **USDC ASA** on Algorand Testnet and the official x402 Facilitator for proof verification. Pricing is dynamic:
+
+```
+Total (USDC) = Base Fee ($1.00) + (Task Count × $0.50) + (Compute Time (s) × $0.05)
+```
+
+90% of each payment is escrowed and split among the winning agents via the atomic contract above; the router keeps a 10% platform fee. See [`docs/x402-integration-guide.md`](./docs/x402-integration-guide.md) for the full protocol walkthrough, tech-stack mapping, and reference client/server examples (`scripts/x402-client-example.js`, `scripts/x402-hono-server-example.js`).
+
+---
+
+## Getting started
 
 ### Prerequisites
 - Docker & Docker Compose
-- (Optional, for local dev outside containers) Java 17+, Node 18+, Python 3.11+
+- Optional, for running services outside containers: Java 17+, Node 18+, Python 3.11+
 
 ### Run the full stack
 
@@ -157,7 +185,7 @@ python contracts/escrow.py        # regenerates escrow.teal
 python scripts/deploy_escrow.py   # simulates an atomic payout group
 ```
 
-### Run an agent standalone
+### Run a single agent standalone
 
 ```bash
 cd agents/research-agent
@@ -165,41 +193,35 @@ pip install -r requirements.txt
 python main.py
 ```
 
-### Run the frontend & CLI interface
+### Frontend: Web UI vs CLI
 
-AgentMesh supports two flexible execution modes:
+AgentMesh's frontend supports two execution modes.
 
-#### 1. Web UI Mode (Browser Interface at http://localhost:3000)
+**Web UI** (browser dashboard at http://localhost:3000):
 ```bash
-npm run dev
-# or
-npm run dev:ui
-# or from frontend folder:
+npm run dev        # or: npm run dev:ui
 cd frontend && npm run dev
 ```
 
-#### 2. CLI Mode (Terminal-only interactive interface without UI)
+**CLI** (terminal-only, no browser):
 ```bash
-npm run cli
-# or
-npm run dev -- --cli
-# or via script:
-./scripts/cli.sh
-# or from frontend folder:
+npm run cli        # or: npm run dev -- --cli, or ./scripts/cli.sh
 cd frontend && npm run cli
 ```
-In CLI mode, you will be prompted to enter your prompt or pick from presets, select a routing strategy, and view real-time prompt decomposition, agent discovery, quote price estimation, x402 Algorand escrow settlement, task execution, and atomic payout receipts directly in your terminal.
+
+In CLI mode you'll be prompted for a prompt (or a preset), a routing strategy, and then watch prompt decomposition, agent discovery, quote pricing, x402/Algorand escrow settlement, task execution, and the atomic payout receipt play out directly in your terminal.
 
 ---
 
-## 📖 API Documentation
+## API documentation
 
-- OpenAPI spec: `docs/api/openapi.yaml`
-- Interactive Swagger UI (when the router service is running): `http://localhost:8080/swagger-ui.html`
+- OpenAPI spec: [`docs/api/openapi.yaml`](./docs/api/openapi.yaml)
+- Interactive Swagger UI (while the router service is running): http://localhost:8080/swagger-ui.html
+- Judge/reviewer walkthrough with full sequence diagrams: [`docs/judge-walkthrough.md`](./docs/judge-walkthrough.md)
 
 ---
 
-## 🧪 Testing
+## Testing
 
 ```bash
 # Agent framework tests
@@ -211,6 +233,6 @@ cd router-service && ./mvnw test
 
 ---
 
-## 📄 License
+## License
 
-See [LICENSE](./LICENSE).
+MIT — see [LICENSE](./LICENSE).
