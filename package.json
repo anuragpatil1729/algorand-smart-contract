@@ -5,6 +5,7 @@
   "type": "module",
   "description": "AgentMesh - Multi-Agent AI Service Platform with Algorand Escrow Settlement",
   "scripts": {
+    "postinstall": "npm --prefix frontend install",
     "dev": "npm --prefix frontend run dev",
     "dev:ui": "npm --prefix frontend run dev:ui",
     "dev:cli": "npm --prefix frontend run cli",
