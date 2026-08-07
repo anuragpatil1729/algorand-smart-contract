@@ -7,7 +7,7 @@ export interface TaskNodeData {
   label: string;
   capability?: string;
   agentName?: string;
-  status?: 'PLANNING' | 'DISCOVERED' | 'QUOTED' | 'ASSIGNED' | 'WAITING' | 'RUNNING' | 'COMPLETED' | 'VERIFIED' | 'FAILED';
+  status?: 'PLANNING' | 'DISCOVERED' | 'QUOTED' | 'ASSIGNED' | 'WAITING' | 'RUNNING' | 'COMPLETED' | 'VERIFIED' | 'FAILED' | 'RETRYING' | 'FALLBACK';
   price?: number;
   duration?: number;
   progress?: number;
@@ -72,6 +72,20 @@ export const TaskNode: React.FC<NodeProps<TaskNodeData>> = memo(({ data }) => {
           badge: 'bg-cyan-500/20 text-cyan-300 border-cyan-400/50',
           icon: <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />,
           dot: 'bg-cyan-400'
+        };
+      case 'RETRYING':
+        return {
+          border: 'border-amber-500/90 shadow-xl shadow-amber-500/30 bg-slate-900/95 ring-2 ring-amber-500/50',
+          badge: 'bg-amber-500/20 text-amber-300 border-amber-500/50',
+          icon: <RefreshCw className="w-3.5 h-3.5 text-amber-400 animate-spin" />,
+          dot: 'bg-amber-400 animate-ping'
+        };
+      case 'FALLBACK':
+        return {
+          border: 'border-fuchsia-500/90 shadow-xl shadow-fuchsia-500/30 bg-slate-900/95 ring-2 ring-fuchsia-500/50',
+          badge: 'bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/50',
+          icon: <RefreshCw className="w-3.5 h-3.5 text-fuchsia-400 animate-spin" />,
+          dot: 'bg-fuchsia-400 animate-ping'
         };
       case 'FAILED':
         return {

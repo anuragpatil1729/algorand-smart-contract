@@ -21,6 +21,7 @@ from agents.shared.models.schemas import (
     HealthResponse,
     Capability,
     AgentErrorResponse,
+    BazaarDiscoveryManifest,
 )
 from agents.shared.services.task_manager import TaskManager
 from agents.shared.services.pricing_strategy import BasePricingStrategy, DefaultPricingStrategy
@@ -157,6 +158,11 @@ class BaseAgent(ABC):
         async def get_status(taskId: str):
             return await self.status(taskId)
 
+        @self.app.get("/.well-known/x402-bazaar.json", response_model=BazaarDiscoveryManifest)
+        @self.app.get("/bazaar/discover", response_model=BazaarDiscoveryManifest)
+        async def get_bazaar_manifest():
+            return await self.bazaar_manifest()
+
     # Standard overridable methods
     async def health(self) -> HealthResponse:
         """
@@ -187,6 +193,29 @@ class BaseAgent(ABC):
             averageExecutionTime=self.config.agent.base_execution_time,
             averagePrice=self.config.agent.base_price,
             capabilities=capability_models,
+        )
+
+    async def bazaar_manifest(self) -> BazaarDiscoveryManifest:
+        """
+        Returns x402 Bazaar Discovery protocol self-publishing manifest.
+        """
+        return BazaarDiscoveryManifest(
+            name=self.agent_info.name,
+            description=f"Decentralized AI Agent: {self.agent_info.name}",
+            endpoint=f"http://{self.config.agent.host}:{self.config.agent.port}",
+            capabilities=self.agent_info.capabilities,
+            supportedModels=["gpt-4o", "claude-3-5-sonnet", "deepseek-r1", "gemini-2.5-flash"],
+            pricing={
+                "base_price_usdc": self.config.agent.base_price,
+                "token_price_usdc": 0.0001,
+            },
+            averageLatency=self.config.agent.base_execution_time * 1000.0,
+            reputation=self.agent_info.reputation * 20.0,
+            jsonSchema={
+                "input": ExecuteRequest.model_json_schema(),
+                "output": ExecuteResponse.model_json_schema(),
+            },
+            version=self.agent_info.version,
         )
 
     async def quote(self, request: QuoteRequest) -> QuoteResponse:

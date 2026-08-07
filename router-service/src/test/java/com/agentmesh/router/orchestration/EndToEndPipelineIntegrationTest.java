@@ -7,6 +7,7 @@ import com.agentmesh.router.orchestration.dto.UnifiedWorkflowRequest;
 import com.agentmesh.router.orchestration.dto.UnifiedWorkflowResponse;
 import com.agentmesh.router.planner.*;
 import com.agentmesh.router.quote.AgentSelector;
+import com.agentmesh.router.repository.AgentRepository;
 import com.agentmesh.router.quote.AssignmentPlanner;
 import com.agentmesh.router.quote.QuoteAggregator;
 import com.agentmesh.router.quote.QuoteCollector;
@@ -88,8 +89,9 @@ class EndToEndPipelineIntegrationTest {
         ExecutionLogger executionLogger = new ExecutionLogger(null);
         ExecutionStateMachine stateMachine = new ExecutionStateMachine();
 
+        AgentRepository agentRepository = mock(AgentRepository.class);
         ExecutionCoordinator coordinator = new ExecutionCoordinator(
-                dependencyScheduler, parallelEngine, taskExecutor, timeoutManager, retryManager, fallbackManager, eventBus, executionLogger, stateMachine
+                dependencyScheduler, parallelEngine, taskExecutor, timeoutManager, retryManager, fallbackManager, eventBus, executionLogger, stateMachine, agentRepository
         );
 
         ExecutionValidator validator = new ExecutionValidator();

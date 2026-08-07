@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import ReactFlow, { 
   Background, 
   Controls, 
-  MiniMap, 
   useNodesState, 
   useEdgesState
 } from 'reactflow';
@@ -136,7 +135,14 @@ export const PlannerPage: React.FC = () => {
             <div>
               <textarea
                 value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
+                onChange={(e) => {
+                  setPrompt(e.target.value);
+                  if (executionResult) {
+                    setExecutionResult(null);
+                    setNodes([]);
+                    setEdges([]);
+                  }
+                }}
                 rows={4}
                 className="w-full glass-input p-3.5 text-sm font-sans leading-relaxed resize-none"
                 placeholder="Describe the workflow you want to execute..."
@@ -150,7 +156,12 @@ export const PlannerPage: React.FC = () => {
                 {presets.map((preset, idx) => (
                   <button
                     key={idx}
-                    onClick={() => setPrompt(preset)}
+                    onClick={() => {
+                      setPrompt(preset);
+                      setExecutionResult(null);
+                      setNodes([]);
+                      setEdges([]);
+                    }}
                     className="w-full text-left text-xs font-sans p-2 rounded-xl bg-slate-950/40 hover:bg-slate-800/60 border border-slate-800/60 text-slate-300 hover:text-white transition-all truncate"
                   >
                     💡 {preset}
@@ -271,7 +282,6 @@ export const PlannerPage: React.FC = () => {
                 >
                   <Background color="#1e293b" gap={20} size={1} />
                   <Controls className="!bg-slate-900 !border-slate-800 !text-slate-300" />
-                  <MiniMap className="!bg-slate-950 !border-slate-800" nodeColor="#6366f1" />
                 </ReactFlow>
               )}
             </div>

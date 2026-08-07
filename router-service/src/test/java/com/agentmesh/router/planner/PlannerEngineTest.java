@@ -40,12 +40,10 @@ class PlannerEngineTest {
         assertNotNull(plan.getGraphRepresentation());
 
         // Ensure capabilities are mapped, NOT agents
-        assertTrue(plan.getRequiredCapabilities().contains("RESEARCH"));
-        assertTrue(plan.getRequiredCapabilities().contains("FRONTEND_DEVELOPMENT"));
-        assertTrue(plan.getRequiredCapabilities().contains("BACKEND_DEVELOPMENT"));
-        assertTrue(plan.getRequiredCapabilities().contains("DATABASE_DESIGN"));
-        assertTrue(plan.getRequiredCapabilities().contains("AUTHENTICATION"));
-        assertTrue(plan.getRequiredCapabilities().contains("DEPLOYMENT"));
+        assertTrue(plan.getRequiredCapabilities().contains("research"));
+        assertTrue(plan.getRequiredCapabilities().contains("code-generation"));
+        assertTrue(plan.getRequiredCapabilities().contains("database"));
+        assertTrue(plan.getRequiredCapabilities().contains("deployment"));
 
         // Retrieve saved plan
         WorkflowPlanResponseDto retrieved = plannerEngine.getPlan(plan.getWorkflowId());

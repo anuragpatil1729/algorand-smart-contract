@@ -242,3 +242,28 @@ class AgentErrorResponse(BaseModel):
     error: str
     detail: Optional[str] = None
     code: str = "AGENT_ERROR"
+
+
+class BazaarDiscoveryManifest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    name: str
+    description: str
+    endpoint: str
+    capabilities: List[str] = Field(default_factory=list)
+    supportedModels: List[str] = Field(
+        default_factory=lambda: ["gpt-4o", "claude-3-5-sonnet", "deepseek-r1", "gemini-2.5-flash"],
+        validation_alias=AliasChoices("supportedModels", "supported_models"),
+    )
+    pricing: Dict[str, float] = Field(default_factory=dict)
+    averageLatency: float = Field(
+        default=450.0,
+        validation_alias=AliasChoices("averageLatency", "average_latency"),
+    )
+    reputation: float = 98.0
+    jsonSchema: Dict[str, Any] = Field(
+        default_factory=dict,
+        validation_alias=AliasChoices("jsonSchema", "schema"),
+    )
+    version: str = "1.0.0"
+

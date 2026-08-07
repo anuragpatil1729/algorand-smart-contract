@@ -110,6 +110,25 @@ export const AlgorandModal: React.FC<AlgorandModalProps> = ({
             </div>
           )}
 
+          {/* Wallet Selector for Web3 Signatures */}
+          <div className="mb-6">
+            <label className="text-xs font-mono text-slate-400 block mb-2">Select Algorand Web3 Wallet Provider:</label>
+            <div className="grid grid-cols-3 gap-2 font-mono text-xs">
+              <button className="glass-card p-2.5 border-violet-500/50 bg-violet-900/20 text-slate-200 hover:border-violet-400 flex items-center justify-center space-x-1.5 rounded-xl font-bold">
+                <Wallet className="w-3.5 h-3.5 text-yellow-400" />
+                <span>Pera Wallet</span>
+              </button>
+              <button className="glass-card p-2.5 border-slate-800 bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:border-slate-700 flex items-center justify-center space-x-1.5 rounded-xl font-bold">
+                <Zap className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Defly Wallet</span>
+              </button>
+              <button className="glass-card p-2.5 border-slate-800 bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:border-slate-700 flex items-center justify-center space-x-1.5 rounded-xl font-bold">
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
+                <span>WalletConnect</span>
+              </button>
+            </div>
+          </div>
+
           {/* Action Footer */}
           <div className="mt-6 flex items-center justify-end space-x-3">
             <button

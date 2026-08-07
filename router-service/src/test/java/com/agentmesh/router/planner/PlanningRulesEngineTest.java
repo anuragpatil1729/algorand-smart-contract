@@ -23,12 +23,10 @@ class PlanningRulesEngineTest {
             System.out.println("Generated Task: " + t.getTaskId() + " | Cap: " + t.getRequiredCapability() + " | Name: " + t.getTaskName());
         }
 
-        assertTrue(tasks.stream().anyMatch(t -> "RESEARCH".equals(t.getRequiredCapability())), "Should have RESEARCH");
-        assertTrue(tasks.stream().anyMatch(t -> "FRONTEND_DEVELOPMENT".equals(t.getRequiredCapability())), "Should have FRONTEND_DEVELOPMENT");
-        assertTrue(tasks.stream().anyMatch(t -> "BACKEND_DEVELOPMENT".equals(t.getRequiredCapability())), "Should have BACKEND_DEVELOPMENT");
-        assertTrue(tasks.stream().anyMatch(t -> "DATABASE_DESIGN".equals(t.getRequiredCapability())), "Should have DATABASE_DESIGN");
-        assertTrue(tasks.stream().anyMatch(t -> "AUTHENTICATION".equals(t.getRequiredCapability())), "Should have AUTHENTICATION");
-        assertTrue(tasks.stream().anyMatch(t -> "TESTING".equals(t.getRequiredCapability())), "Should have TESTING");
-        assertTrue(tasks.stream().anyMatch(t -> "DEPLOYMENT".equals(t.getRequiredCapability())), "Should have DEPLOYMENT");
+        assertTrue(tasks.stream().anyMatch(t -> "research".equals(t.getRequiredCapability())), "Should have research");
+        assertTrue(tasks.stream().anyMatch(t -> "code-generation".equals(t.getRequiredCapability())), "Should have code-generation");
+        assertTrue(tasks.stream().anyMatch(t -> "database".equals(t.getRequiredCapability())), "Should have database");
+        assertTrue(tasks.stream().anyMatch(t -> "testing".equals(t.getRequiredCapability())), "Should have testing");
+        assertTrue(tasks.stream().anyMatch(t -> "deployment".equals(t.getRequiredCapability())), "Should have deployment");
     }
 }

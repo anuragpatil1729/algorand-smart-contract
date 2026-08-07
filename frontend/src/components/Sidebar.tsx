@@ -18,6 +18,7 @@ export const Sidebar: React.FC = () => {
     { to: '/', label: 'Mission Control', icon: LayoutDashboard, badge: 'Live' },
     { to: '/planner', label: 'Workflow Builder', icon: Workflow, badge: 'Hero' },
     { to: '/marketplace', label: 'Agent Marketplace', icon: Store, count: '5' },
+    { to: '/agent-dashboard', label: 'Agent Portal', icon: Sparkles, badge: 'New' },
     { to: '/payments', label: 'x402 Payments', icon: CreditCard, badge: 'USDC' },
     { to: '/analytics', label: 'Analytics', icon: BarChart3 },
     { to: '/admin', label: 'System Health', icon: ShieldAlert, badge: 'UP' },

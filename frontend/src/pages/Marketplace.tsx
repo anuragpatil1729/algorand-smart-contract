@@ -20,12 +20,15 @@ export const Marketplace: React.FC = () => {
   const agents = agentsData || [];
 
   const filteredAgents = agents
-    .filter((a: any) => search === '' || (a.name || '').toLowerCase().includes(search.toLowerCase()) || (a.capability || '').toLowerCase().includes(search.toLowerCase()))
+    .filter((a: any) => search === '' || (a.name || '').toLowerCase().includes(search.toLowerCase()) || (a.capability || '').toLowerCase().includes(search.toLowerCase()) || (a.capabilities && a.capabilities.some((c: string) => c.toLowerCase().includes(search.toLowerCase()))))
     .filter((a: any) => capabilityFilter === 'ALL' || a.capability === capabilityFilter || (a.capabilities && a.capabilities.includes(capabilityFilter)))
+    .filter((a: any) => sortBy !== 'verified' || a.healthScore >= 90 || a.rating >= 4.7)
     .sort((a: any, b: any) => {
-      if (sortBy === 'reputation') return (b.reputation || 95) - (a.reputation || 95);
-      if (sortBy === 'price') return (a.baseCostUsdc || a.basePrice || 40) - (b.baseCostUsdc || b.basePrice || 40);
-      if (sortBy === 'speed') return (a.responseTimeMs || 800) - (b.responseTimeMs || 800);
+      if (sortBy === 'reputation' || sortBy === 'highest-rated') return (b.rating || b.reputation || 4.5) - (a.rating || a.reputation || 4.5);
+      if (sortBy === 'cheapest' || sortBy === 'price') return (a.basePrice || a.baseCostUsdc || 40) - (b.basePrice || b.baseCostUsdc || 40);
+      if (sortBy === 'fastest' || sortBy === 'speed') return (a.averageResponseTime || a.responseTimeMs || 500) - (b.averageResponseTime || b.responseTimeMs || 500);
+      if (sortBy === 'trending') return (b.completedTasks || b.totalRequests || 0) - (a.completedTasks || a.totalRequests || 0);
+      if (sortBy === 'latest') return new Date(b.registrationTime || b.createdAt || Date.now()).getTime() - new Date(a.registrationTime || a.createdAt || Date.now()).getTime();
       return 0;
     });
 
@@ -43,7 +46,7 @@ export const Marketplace: React.FC = () => {
             </span>
           </div>
           <p className="text-sm text-slate-400 mt-1 font-sans">
-            Discover specialized AI microservice agents bidding on workflow sub-tasks
+            Discover specialized AI microservice agents bidding on workflow sub-tasks via x402 Bazaar Protocol
           </p>
         </div>
       </div>
@@ -56,15 +59,15 @@ export const Marketplace: React.FC = () => {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search agents or capabilities..."
+            placeholder="Search agents, models, or capabilities..."
             className="w-full glass-input pl-10 pr-4 py-2 text-xs font-sans"
           />
         </div>
 
-        <div className="flex items-center space-x-3 w-full md:w-auto font-mono text-xs">
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto font-mono text-xs">
           <div className="flex items-center space-x-1.5">
             <Filter className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-slate-400">Capability:</span>
+            <span className="text-slate-400">Filter:</span>
           </div>
           <select
             value={capabilityFilter}
@@ -72,21 +75,26 @@ export const Marketplace: React.FC = () => {
             className="glass-input p-2 text-xs bg-slate-950 text-slate-200"
           >
             <option value="ALL">ALL CAPABILITIES</option>
-            <option value="RESEARCH">RESEARCH</option>
-            <option value="FRONTEND">FRONTEND</option>
-            <option value="LOGO_DESIGN">LOGO_DESIGN</option>
-            <option value="PITCH_DECK">PITCH_DECK</option>
-            <option value="TESTING">TESTING</option>
+            <option value="research">RESEARCH</option>
+            <option value="code-generation">CODE GENERATION</option>
+            <option value="vision">VISION / GRAPHICS</option>
+            <option value="documentation">DOCUMENTATION</option>
+            <option value="testing">TESTING / QA</option>
+            <option value="database">DATABASE</option>
+            <option value="deployment">DEPLOYMENT</option>
           </select>
 
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="glass-input p-2 text-xs bg-slate-950 text-slate-200"
+            className="glass-input p-2 text-xs bg-slate-950 text-slate-200 font-bold"
           >
-            <option value="reputation">SORT BY REPUTATION</option>
-            <option value="price">SORT BY LOWEST PRICE</option>
-            <option value="speed">SORT BY FASTEST SPEED</option>
+            <option value="highest-rated">⭐ HIGHEST RATED</option>
+            <option value="cheapest">💲 CHEAPEST</option>
+            <option value="fastest">⚡ FASTEST</option>
+            <option value="verified">🛡️ VERIFIED ONLY</option>
+            <option value="trending">🔥 TRENDING</option>
+            <option value="latest">🆕 LATEST</option>
           </select>
         </div>
       </div>
@@ -101,9 +109,9 @@ export const Marketplace: React.FC = () => {
       ) : filteredAgents.length === 0 ? (
         <div className="glass-panel p-12 text-center border-slate-800 space-y-3">
           <Activity className="w-10 h-10 text-slate-600 mx-auto animate-pulse" />
-          <h3 className="text-sm font-bold text-slate-300 font-mono">No Agents Currently Registered</h3>
+          <h3 className="text-sm font-bold text-slate-300 font-mono">No Agents Matching Criteria</h3>
           <p className="text-xs text-slate-500 max-w-sm mx-auto font-sans">
-            Connect an agent microservice or toggle Demo Mode to discover registered AI workers.
+            Try adjusting your search terms or filter selection.
           </p>
         </div>
       ) : (
@@ -114,58 +122,66 @@ export const Marketplace: React.FC = () => {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: idx * 0.05 }}
-              className="glass-panel p-5 border-slate-800/80 space-y-4 hover:border-violet-500/40 transition-all group"
+              className="glass-panel p-5 border-slate-800/80 space-y-4 hover:border-violet-500/40 transition-all group relative"
             >
               <div className="flex items-start justify-between">
                 <div>
                   <h3 className="text-base font-bold text-white group-hover:text-violet-300 transition-colors">
                     {agent.name}
                   </h3>
-                  <span className="inline-flex items-center space-x-1 text-[10px] font-mono font-medium text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20 mt-1">
-                    <Cpu className="w-3 h-3 text-indigo-400" />
-                    <span>{agent.capability || agent.capabilities?.[0] || 'GENERAL'}</span>
-                  </span>
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {(agent.capabilities || [agent.capability || 'code-generation']).slice(0, 3).map((cap: string, cIdx: number) => (
+                      <span key={cIdx} className="inline-flex items-center space-x-1 text-[10px] font-mono font-medium text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+                        <Cpu className="w-3 h-3 text-indigo-400" />
+                        <span>{cap}</span>
+                      </span>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="flex items-center space-x-1 text-xs font-mono text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
                   <Star className="w-3.5 h-3.5 fill-amber-400" />
-                  <span>{agent.rating || 4.9}</span>
+                  <span>{agent.rating || 4.8}</span>
                 </div>
               </div>
 
-              <p className="text-xs text-slate-400 leading-relaxed font-sans">
+              <p className="text-xs text-slate-400 leading-relaxed font-sans line-clamp-2">
                 {agent.description || 'Specialized AI agent microservice registered on AgentMesh network.'}
               </p>
 
               {/* Metrics Breakdown */}
-              <div className="grid grid-cols-2 gap-2 text-xs font-mono pt-3 border-t border-slate-800/80">
+              <div className="grid grid-cols-3 gap-2 text-xs font-mono pt-3 border-t border-slate-800/80">
                 <div className="glass-card p-2 border-slate-800">
-                  <span className="text-[10px] text-slate-500 block">Avg Response</span>
-                  <span className="text-slate-200 font-semibold">{agent.responseTimeMs || 850}ms</span>
-                </div>
-                <div className="glass-card p-2 border-slate-800">
-                  <span className="text-[10px] text-slate-500 block">Reputation Score</span>
-                  <span className="text-violet-400 font-semibold">{agent.reputation || 98} / 100</span>
+                  <span className="text-[10px] text-slate-500 block">Avg Latency</span>
+                  <span className="text-slate-200 font-semibold">{Math.round(agent.averageResponseTime || agent.responseTimeMs || 480)}ms</span>
                 </div>
                 <div className="glass-card p-2 border-slate-800">
                   <span className="text-[10px] text-slate-500 block">Success Rate</span>
-                  <span className="text-emerald-400 font-semibold">{agent.successRate || 99.1}%</span>
+                  <span className="text-emerald-400 font-semibold">{agent.successRate || 98.5}%</span>
                 </div>
                 <div className="glass-card p-2 border-slate-800">
-                  <span className="text-[10px] text-slate-500 block">Base Cost</span>
-                  <span className="text-emerald-400 font-semibold">${agent.baseCostUsdc || agent.basePrice || 45.0} USDC</span>
+                  <span className="text-[10px] text-slate-500 block">Price</span>
+                  <span className="text-emerald-400 font-semibold">${agent.basePrice || agent.baseCostUsdc || 45.0} USDC</span>
+                </div>
+                <div className="glass-card p-2 border-slate-800">
+                  <span className="text-[10px] text-slate-500 block">Total Jobs</span>
+                  <span className="text-violet-300 font-semibold">{agent.completedTasks || agent.totalRequests || 12}</span>
+                </div>
+                <div className="glass-card p-2 border-slate-800 col-span-2">
+                  <span className="text-[10px] text-slate-500 block">Total Earnings</span>
+                  <span className="text-emerald-400 font-bold">${(agent.totalEarnings || ((agent.completedTasks || 10) * (agent.basePrice || 45))).toFixed(2)} USDC</span>
                 </div>
               </div>
 
               {/* Footer Wallet & Health */}
               <div className="flex items-center justify-between pt-2 text-[11px] font-mono text-slate-500 border-t border-slate-800/60">
-                <div className="flex items-center space-x-1">
-                  <Wallet className="w-3 h-3 text-indigo-400" />
-                  <span>{agent.wallet || agent.walletAddress || 'WLLT...ADDR'}</span>
+                <div className="flex items-center space-x-1 truncate max-w-[180px]">
+                  <Wallet className="w-3 h-3 text-indigo-400 shrink-0" />
+                  <span className="truncate">{agent.walletAddress || agent.wallet || 'D64E...JKPQ'}</span>
                 </div>
                 <div className="flex items-center space-x-1.5 text-emerald-400 font-semibold">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>{agent.status || 'HEALTHY'}</span>
+                  <span>{agent.status || agent.healthStatus || 'ONLINE'}</span>
                 </div>
               </div>
             </motion.div>

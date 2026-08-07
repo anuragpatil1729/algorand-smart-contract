@@ -39,6 +39,15 @@ export const AnalyticsPage: React.FC = () => {
     { name: 'Testing', tasks: 50, cost: 1500 }
   ];
 
+  const agentGrowthData = [
+    { month: 'Jan', agents: 2, revenue: 120 },
+    { month: 'Feb', agents: 3, revenue: 240 },
+    { month: 'Mar', agents: 4, revenue: 410 },
+    { month: 'Apr', agents: 5, revenue: 590 },
+    { month: 'May', agents: 7, revenue: 820 },
+    { month: 'Jun', agents: 9, revenue: 1150 }
+  ];
+
   return (
     <div className="space-y-8 pb-12">
       {/* Header */}
@@ -53,7 +62,7 @@ export const AnalyticsPage: React.FC = () => {
             </span>
           </div>
           <p className="text-sm text-slate-400 mt-1 font-sans">
-            Real-time analytics for revenue, agent utilization, workflow trends, and execution speed
+            Real-time analytics for revenue, agent growth, workflow success rates, average costs, and execution speed
           </p>
         </div>
       </div>
@@ -125,6 +134,29 @@ export const AnalyticsPage: React.FC = () => {
                 <YAxis stroke="#64748b" fontSize={11} />
                 <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', fontSize: '12px' }} />
                 <Bar dataKey="tasks" fill="#8b5cf6" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Agent Network Growth Chart */}
+        <div className="glass-panel p-5 border-slate-800/80 space-y-4 lg:col-span-2">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-white flex items-center space-x-2">
+              <BarChart3 className="w-4 h-4 text-indigo-400" />
+              <span>Decentralized Agent Network Growth & Revenue Scale</span>
+            </h3>
+            <span className="text-xs font-mono text-slate-400">Monthly Growth</span>
+          </div>
+
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={agentGrowthData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                <XAxis dataKey="month" stroke="#64748b" fontSize={11} />
+                <YAxis stroke="#64748b" fontSize={11} />
+                <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', fontSize: '12px' }} />
+                <Bar dataKey="agents" fill="#6366f1" radius={[6, 6, 0, 0]} name="Active Agents" />
               </BarChart>
             </ResponsiveContainer>
           </div>

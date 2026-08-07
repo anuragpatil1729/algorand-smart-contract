@@ -70,6 +70,12 @@ public class Agent {
     @Column(name = "failed_tasks")
     private Long failedTasks = 0L;
 
+    @Column(name = "total_requests")
+    private Long totalRequests = 0L;
+
+    @Column(name = "total_earnings")
+    private Double totalEarnings = 0.0;
+
     @Column(name = "peak_concurrency")
     private Integer peakConcurrency = 0;
 
@@ -252,6 +258,10 @@ public class Agent {
     public void setCompletedTasks(Long completedTasks) { this.completedTasks = completedTasks; }
     public Long getFailedTasks() { return failedTasks; }
     public void setFailedTasks(Long failedTasks) { this.failedTasks = failedTasks; }
+    public Long getTotalRequests() { return totalRequests; }
+    public void setTotalRequests(Long totalRequests) { this.totalRequests = totalRequests; }
+    public Double getTotalEarnings() { return totalEarnings; }
+    public void setTotalEarnings(Double totalEarnings) { this.totalEarnings = totalEarnings; }
     public Integer getPeakConcurrency() { return peakConcurrency; }
     public void setPeakConcurrency(Integer peakConcurrency) { this.peakConcurrency = peakConcurrency; }
     public LocalDateTime getRegistrationTime() { return registrationTime; }

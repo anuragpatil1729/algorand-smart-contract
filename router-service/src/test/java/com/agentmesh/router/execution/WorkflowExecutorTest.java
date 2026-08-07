@@ -8,6 +8,7 @@ import com.agentmesh.router.quote.AgentSelector;
 import com.agentmesh.router.quote.QuoteCollector;
 import com.agentmesh.router.quote.dto.AssignmentPlan;
 import com.agentmesh.router.quote.dto.TaskAssignment;
+import com.agentmesh.router.repository.AgentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -45,8 +46,9 @@ class WorkflowExecutorTest {
         ExecutionLogger executionLogger = new ExecutionLogger(null);
         ExecutionStateMachine stateMachine = new ExecutionStateMachine();
 
+        AgentRepository agentRepository = mock(AgentRepository.class);
         ExecutionCoordinator coordinator = new ExecutionCoordinator(
-                dependencyScheduler, parallelEngine, taskExecutor, timeoutManager, retryManager, fallbackManager, eventBus, executionLogger, stateMachine
+                dependencyScheduler, parallelEngine, taskExecutor, timeoutManager, retryManager, fallbackManager, eventBus, executionLogger, stateMachine, agentRepository
         );
 
         ExecutionValidator validator = new ExecutionValidator();

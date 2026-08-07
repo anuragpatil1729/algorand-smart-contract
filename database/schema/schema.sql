@@ -4,12 +4,19 @@
 CREATE TABLE IF NOT EXISTS agents (
     id VARCHAR(64) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
+    description TEXT,
     endpoint VARCHAR(255) NOT NULL,
     wallet_address VARCHAR(255) NOT NULL,
+    version VARCHAR(50) DEFAULT '1.0.0',
     rating DOUBLE PRECISION DEFAULT 4.5,
     success_rate DOUBLE PRECISION DEFAULT 95.0,
     health_status VARCHAR(50) DEFAULT 'UP',
     base_price DOUBLE PRECISION DEFAULT 50.0,
+    average_response_time DOUBLE PRECISION DEFAULT 500.0,
+    completed_tasks BIGINT DEFAULT 0,
+    failed_tasks BIGINT DEFAULT 0,
+    total_requests BIGINT DEFAULT 0,
+    total_earnings DOUBLE PRECISION DEFAULT 0.0,
     supported_capabilities TEXT NOT NULL, -- Comma-separated list of capabilities
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

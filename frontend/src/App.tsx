@@ -10,6 +10,7 @@ import { WorkflowDetails } from './pages/WorkflowDetails';
 import { Marketplace } from './pages/Marketplace';
 import { PaymentsPage } from './pages/PaymentsPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
+import { AgentDashboard } from './pages/AgentDashboard';
 import { AdminPage } from './pages/AdminPage';
 
 import { DemoModeProvider } from './contexts/DemoModeContext';
@@ -58,6 +59,7 @@ export const App: React.FC = () => {
                     <Route path="/marketplace" element={<Marketplace />} />
                     <Route path="/payments" element={<PaymentsPage />} />
                     <Route path="/analytics" element={<AnalyticsPage />} />
+                    <Route path="/agent-dashboard" element={<AgentDashboard />} />
                     <Route path="/admin" element={<AdminPage />} />
                   </Routes>
                 </main>

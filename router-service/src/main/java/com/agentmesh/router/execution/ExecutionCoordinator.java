@@ -25,6 +25,7 @@ public class ExecutionCoordinator {
     private final ExecutionEventBus eventBus;
     private final ExecutionLogger executionLogger;
     private final ExecutionStateMachine stateMachine;
+    private final com.agentmesh.router.repository.AgentRepository agentRepository;
 
     public ExecutionCoordinator(
             DependencyScheduler dependencyScheduler,
@@ -35,7 +36,8 @@ public class ExecutionCoordinator {
             FallbackManager fallbackManager,
             ExecutionEventBus eventBus,
             ExecutionLogger executionLogger,
-            ExecutionStateMachine stateMachine
+            ExecutionStateMachine stateMachine,
+            com.agentmesh.router.repository.AgentRepository agentRepository
     ) {
         this.dependencyScheduler = dependencyScheduler;
         this.parallelExecutionEngine = parallelExecutionEngine;
@@ -46,6 +48,7 @@ public class ExecutionCoordinator {
         this.eventBus = eventBus;
         this.executionLogger = executionLogger;
         this.stateMachine = stateMachine;
+        this.agentRepository = agentRepository;
     }
 
     public boolean executeWorkflowCoordinator(ExecutionContext context, Map<String, List<String>> taskDependenciesMap, Long taskTimeoutMs, Integer maxRetries) {
@@ -119,12 +122,14 @@ public class ExecutionCoordinator {
             context.setTaskOutput(taskId, response.getOutput());
             context.setTaskResponse(taskId, response);
 
+            updateAgentMetrics(agentId, true, assignment.getPrice(), response.getExecutionTimeMs());
             eventBus.publishEvent(new ExecutionEvent("TASK_COMPLETED", context.getWorkflowId(), taskId, agentId, "Task completed successfully by " + agentId), context);
             executionLogger.logEvent(context, taskId, agentId, LogLevel.INFO, "Task '" + taskId + "' completed successfully");
             return response;
         }
 
         // 2. Failure on primary agent -> Trigger Fallback Manager
+        updateAgentMetrics(agentId, false, 0.0, 0L);
         eventBus.publishEvent(new ExecutionEvent("TASK_FAILED", context.getWorkflowId(), taskId, agentId, "Primary execution failed on agent " + agentId), context);
         executionLogger.logEvent(context, taskId, agentId, LogLevel.WARN, "Primary execution failed on agent " + agentId + ". Initiating dynamic fallback.");
 
@@ -154,9 +159,12 @@ public class ExecutionCoordinator {
                 context.setTaskOutput(taskId, fallbackResponse.getOutput());
                 context.setTaskResponse(taskId, fallbackResponse);
 
+                updateAgentMetrics(fallbackAgentId, true, fallbackAssignment.getPrice(), fallbackResponse.getExecutionTimeMs());
                 eventBus.publishEvent(new ExecutionEvent("TASK_COMPLETED", context.getWorkflowId(), taskId, fallbackAgentId, "Task completed by fallback agent " + fallbackAgentId), context);
                 executionLogger.logEvent(context, taskId, fallbackAgentId, LogLevel.INFO, "Task '" + taskId + "' completed successfully by fallback agent");
                 return fallbackResponse;
+            } else {
+                updateAgentMetrics(fallbackAgentId, false, 0.0, 0L);
             }
         }
 
@@ -166,5 +174,34 @@ public class ExecutionCoordinator {
         executionLogger.logEvent(context, taskId, agentId, LogLevel.ERROR, "Task '" + taskId + "' failed permanently after retries and fallback attempts.");
 
         return response;
+    }
+
+    private void updateAgentMetrics(String agentId, boolean success, double price, long executionTimeMs) {
+        if (agentId == null || agentRepository == null) return;
+        try {
+            agentRepository.findById(agentId).ifPresent(agent -> {
+                long totalReqs = (agent.getTotalRequests() != null ? agent.getTotalRequests() : 0L) + 1;
+                long completed = (agent.getCompletedTasks() != null ? agent.getCompletedTasks() : 0L) + (success ? 1 : 0);
+                long failed = (agent.getFailedTasks() != null ? agent.getFailedTasks() : 0L) + (success ? 0 : 1);
+                double earnings = (agent.getTotalEarnings() != null ? agent.getTotalEarnings() : 0.0) + (success ? price : 0.0);
+                double successRate = Math.round(((double) completed / totalReqs) * 100.0 * 10.0) / 10.0;
+
+                double avgTime = agent.getAverageResponseTime() != null ? agent.getAverageResponseTime() : 500.0;
+                if (executionTimeMs > 0) {
+                    avgTime = Math.round((avgTime * 0.8 + executionTimeMs * 0.2) * 10.0) / 10.0;
+                }
+
+                agent.setTotalRequests(totalReqs);
+                agent.setCompletedTasks(completed);
+                agent.setFailedTasks(failed);
+                agent.setTotalEarnings(earnings);
+                agent.setSuccessRate(successRate);
+                agent.setAverageResponseTime(avgTime);
+                agent.setLastHeartbeat(java.time.LocalDateTime.now());
+                agentRepository.save(agent);
+            });
+        } catch (Exception e) {
+            log.warn("Failed to update agent metrics for {}: {}", agentId, e.getMessage());
+        }
     }
 }

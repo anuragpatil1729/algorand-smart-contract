@@ -29,6 +29,8 @@ public class AgentRegistryDto {
     private LocalDateTime lastHeartbeat;
     private Long completedTasks;
     private Long failedTasks;
+    private Long totalRequests;
+    private Double totalEarnings;
     private LocalDateTime registrationTime;
     private List<String> capabilities;
 
@@ -58,6 +60,8 @@ public class AgentRegistryDto {
         dto.setLastHeartbeat(agent.getLastHeartbeat());
         dto.setCompletedTasks(agent.getCompletedTasks());
         dto.setFailedTasks(agent.getFailedTasks());
+        dto.setTotalRequests(agent.getTotalRequests());
+        dto.setTotalEarnings(agent.getTotalEarnings());
         dto.setRegistrationTime(agent.getRegistrationTime());
         if (agent.getCapabilities() != null && !agent.getCapabilities().isBlank()) {
             dto.setCapabilities(Arrays.asList(agent.getCapabilities().split(",")));
@@ -109,6 +113,10 @@ public class AgentRegistryDto {
     public void setCompletedTasks(Long completedTasks) { this.completedTasks = completedTasks; }
     public Long getFailedTasks() { return failedTasks; }
     public void setFailedTasks(Long failedTasks) { this.failedTasks = failedTasks; }
+    public Long getTotalRequests() { return totalRequests; }
+    public void setTotalRequests(Long totalRequests) { this.totalRequests = totalRequests; }
+    public Double getTotalEarnings() { return totalEarnings; }
+    public void setTotalEarnings(Double totalEarnings) { this.totalEarnings = totalEarnings; }
     public LocalDateTime getRegistrationTime() { return registrationTime; }
     public void setRegistrationTime(LocalDateTime registrationTime) { this.registrationTime = registrationTime; }
     public List<String> getCapabilities() { return capabilities; }

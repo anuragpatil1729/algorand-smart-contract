@@ -37,6 +37,7 @@ public class TaskAssignment {
     public void setSelectedAgentEndpoint(String selectedAgentEndpoint) { this.selectedAgentEndpoint = selectedAgentEndpoint; }
 
     public Double getQuotedPrice() { return quotedPrice; }
+    public Double getPrice() { return quotedPrice != null ? quotedPrice : 0.0; }
     public void setQuotedPrice(Double quotedPrice) { this.quotedPrice = quotedPrice; }
 
     public Integer getEstimatedDuration() { return estimatedDuration; }

@@ -195,14 +195,20 @@ public class AgentDiscoveryService {
 
     private boolean agentMatchesTask(Agent agent, String taskType) {
         if (agent == null || agent.getCapabilities() == null || taskType == null) return false;
-        String caps = agent.getCapabilities().toUpperCase();
-        String type = taskType.toUpperCase();
-        if (type.contains("RESEARCH") && caps.contains("RESEARCH")) return true;
-        if ((type.contains("FRONTEND") || type.contains("BACKEND") || type.contains("CODE")) && (caps.contains("DEVELOPMENT") || caps.contains("CODING"))) return true;
-        if ((type.contains("LOGO") || type.contains("DESIGN") || type.contains("GRAPHICS")) && (caps.contains("LOGO_DESIGN") || caps.contains("IMAGE"))) return true;
-        if ((type.contains("PITCH") || type.contains("PRESENTATION") || type.contains("DECK")) && caps.contains("PRESENTATION")) return true;
-        if ((type.contains("TESTING") || type.contains("QA") || type.contains("AUDIT")) && caps.contains("TESTING")) return true;
-        return caps.contains(type);
+        String caps = agent.getCapabilities().toLowerCase();
+        String type = taskType.toLowerCase();
+
+        if (type.contains("research") && caps.contains("research")) return true;
+        if ((type.contains("code") || type.contains("dev") || type.contains("frontend") || type.contains("backend")) && (caps.contains("code") || caps.contains("dev") || caps.contains("coding") || caps.contains("frontend") || caps.contains("backend"))) return true;
+        if ((type.contains("vision") || type.contains("image") || type.contains("logo") || type.contains("graphic") || type.contains("design")) && (caps.contains("vision") || caps.contains("image") || caps.contains("logo") || caps.contains("graphic"))) return true;
+        if ((type.contains("doc") || type.contains("pitch") || type.contains("presentation") || type.contains("slide") || type.contains("deck")) && (caps.contains("doc") || caps.contains("presentation") || caps.contains("pitch"))) return true;
+        if ((type.contains("test") || type.contains("qa") || type.contains("audit")) && (caps.contains("test") || caps.contains("qa") || caps.contains("audit"))) return true;
+        if ((type.contains("data") || type.contains("sql") || type.contains("db")) && (caps.contains("data") || caps.contains("sql") || caps.contains("db"))) return true;
+        if ((type.contains("deploy") || type.contains("docker") || type.contains("cloud") || type.contains("k8s")) && (caps.contains("deploy") || caps.contains("docker") || caps.contains("cloud"))) return true;
+        if ((type.contains("translat") || type.contains("lang")) && (caps.contains("translat") || caps.contains("lang"))) return true;
+        if ((type.contains("architect")) && (caps.contains("architect") || caps.contains("design"))) return true;
+
+        return caps.contains(type) || type.contains(caps);
     }
 
     public void initDefaultAgents() {

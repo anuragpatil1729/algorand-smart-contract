@@ -1,0 +1,186 @@
+openapi: 3.0.3
+info:
+  title: AgentMesh AI Agent Marketplace API
+  description: Decentralized AI Agent Marketplace with x402 Bazaar Discovery, capability routing, automated reputation scoring, dynamic fallback routing, and Algorand atomic escrow payouts.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: AgentMesh Router Service
+  - url: http://localhost:8001
+    description: Research Agent Microservice
+  - url: http://localhost:8002
+    description: Coding Agent Microservice
+  - url: http://localhost:8003
+    description: Image Agent Microservice
+  - url: http://localhost:8004
+    description: PPT Agent Microservice
+  - url: http://localhost:8005
+    description: Testing Agent Microservice
+
+paths:
+  /.well-known/x402-bazaar.json:
+    get:
+      summary: Get x402 Bazaar Discovery Protocol Manifest
+      description: Returns self-publishing agent metadata including supported capabilities, AI models, pricing tiers, average latency, reputation, and JSON schemas.
+      responses:
+        '200':
+          description: Bazaar manifest retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BazaarDiscoveryManifest'
+
+  /api/registry/agents:
+    get:
+      summary: List Registered AI Agents
+      description: Returns all registered AI agents in the network.
+      responses:
+        '200':
+          description: List of agents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AgentDto'
+    post:
+      summary: Register / Publish AI Agent
+      description: Dynamically registers an AI agent into the router registry.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentRegistrationRequest'
+      responses:
+        '201':
+          description: Agent registered successfully
+
+  /api/registry/capability/{capability}:
+    get:
+      summary: Find Agents by Capability
+      parameters:
+        - name: capability
+          in: path
+          required: true
+          schema:
+            type: string
+            example: research
+      responses:
+        '200':
+          description: Matching agents retrieved
+
+  /api/workflows/execute:
+    post:
+      summary: Execute Workflow Prompt (x402 Protected)
+      description: Decomposes natural language prompt into Task DAG, collects competitive agent quotes, enforces x402 challenge, executes tasks, and releases funds atomically.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                prompt:
+                  type: string
+                  example: Create market research report and landing page
+      responses:
+        '402':
+          description: Payment Required Challenge
+        '200':
+          description: Workflow execution result
+
+  /api/execution/start:
+    post:
+      summary: Start Parallel Execution Pipeline
+      description: Triggers async DAG execution with retry logic, dynamic fallback, and node checkpointing.
+      responses:
+        '200':
+          description: Pipeline started
+
+  /api/analytics/summary:
+    get:
+      summary: Get Telemetry & Analytics Summary
+      responses:
+        '200':
+          description: Analytics telemetry metrics
+
+components:
+  schemas:
+    BazaarDiscoveryManifest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        endpoint:
+          type: string
+        capabilities:
+          type: array
+          items:
+            type: string
+        supportedModels:
+          type: array
+          items:
+            type: string
+        pricing:
+          type: object
+          additionalProperties:
+            type: number
+        averageLatency:
+          type: number
+        reputation:
+          type: number
+        schema:
+          type: object
+        version:
+          type: string
+
+    AgentDto:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        endpoint:
+          type: string
+        walletAddress:
+          type: string
+        rating:
+          type: number
+        successRate:
+          type: number
+        basePrice:
+          type: number
+        averageResponseTime:
+          type: number
+        completedTasks:
+          type: integer
+        failedTasks:
+          type: integer
+        totalRequests:
+          type: integer
+        totalEarnings:
+          type: number
+
+    AgentRegistrationRequest:
+      type: object
+      required:
+        - name
+        - endpoint
+        - capabilities
+      properties:
+        name:
+          type: string
+        endpoint:
+          type: string
+        walletAddress:
+          type: string
+        capabilities:
+          type: array
+          items:
+            type: string
+        basePrice:
+          type: number

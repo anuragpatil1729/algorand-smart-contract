@@ -109,7 +109,15 @@ export const PaymentsPage: React.FC = () => {
                     <tr key={idx} className="hover:bg-slate-900/40 transition-colors">
                       <td className="py-3 px-4 font-semibold text-slate-200">
                         <div className="flex items-center space-x-1.5">
-                          <span>{txId}</span>
+                          <a
+                            href={`https://lora.algokit.io/testnet/transaction/${txId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-violet-400 hover:text-violet-300 hover:underline flex items-center space-x-1"
+                            title="View on Algorand Explorer"
+                          >
+                            <span>{txId}</span>
+                          </a>
                           <button onClick={() => copyTx(txId)} className="text-slate-500 hover:text-slate-200 p-1">
                             <Copy className="w-3 h-3" />
                           </button>
